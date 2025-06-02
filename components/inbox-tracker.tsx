@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Archive, Edit, RefreshCcw, Search, AlertCircle, CheckCircle2, Clock, Star, MoreHorizontal, Filter, ChevronRight } from "lucide-react"
+import { Archive, Edit, RefreshCcw, Search, AlertCircle, CheckCircle2, Clock, Star, MoreHorizontal, Filter, ChevronRight, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -158,8 +158,39 @@ export function InboxTracker() {
     }
   }
 
+  const exportToCSV = () => {
+    // Convert the filtered emails to CSV format
+    const headers = ['Recipient', 'Subject', 'Status', 'Opens', 'Last Opened', 'Sent']
+    const csvData = filteredEmails.map(email => [
+      email.recipient_email,
+      email.subject,
+      getEffectiveStatus(email),
+      getLegitimateOpensCount(email),
+      hasLegitimateOpens(email) ? email.last_opened : 'Not opened',
+      email.sent_at
+    ])
+    
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `slidein-inbox-tracker-${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    toast.success('Exported successfully')
+  }
+
   return (
-    <div className="inbox-tracker-container w-full space-y-4 mx-auto" style={{ maxWidth: "1400px" }}>
+    <div className="inbox-tracker-container w-full space-y-4 mx-auto" style={{ maxWidth: "1600px" }}>
       {/* Header Section */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
@@ -194,6 +225,15 @@ export function InboxTracker() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-sm h-10 font-medium rounded-full border-gray-200 hover:bg-gray-50 flex items-center gap-2 whitespace-nowrap" 
+            onClick={exportToCSV}
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
