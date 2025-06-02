@@ -31,7 +31,14 @@ export default function LandingPage() {
               className="h-8 w-auto"
             />
           </Link>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
+            <Link
+              href="/privacy-policy"
+              className="text-gray-600 hover:text-pink-500 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <span className="text-gray-300">|</span>
             <Link
               href="/sign-in"
               className="text-gray-600 hover:text-pink-500 transition-colors"
