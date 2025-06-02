@@ -33,7 +33,7 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center space-x-6">
             <Link
-              href="/privacy-policy"
+              href="https://slide-in.vercel.app/privacy-policy"
               className="text-gray-600 hover:text-pink-500 transition-colors"
             >
               Privacy Policy
@@ -215,7 +215,7 @@ export default function LandingPage() {
               <h3 className="font-semibold text-gray-900 mb-3">Legal</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/privacy-policy" className="text-gray-500 hover:text-pink-500 text-sm">
+                  <Link href="https://slide-in.vercel.app/privacy-policy" className="text-gray-500 hover:text-pink-500 text-sm">
                     Privacy Policy
                   </Link>
                 </li>
