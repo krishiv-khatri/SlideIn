@@ -1,6 +1,6 @@
 import { GmailTest } from '@/components/gmail-test';
 import { Suspense } from 'react';
-import TailwindSpinner from '@/components/ui/tailwind-spinner';
+import { LoadingState } from '@/components/ui/loading-state';
 
 export default function GmailTestPage() {
   return (
@@ -14,7 +14,7 @@ export default function GmailTestPage() {
       
       <div className="max-w-2xl mx-auto">
         <Suspense 
-          fallback={<TailwindSpinner />}
+          fallback={<LoadingState text="Loading Gmail test..." variant="minimal" />}
           key="gmail-test-suspense"
         >
           <GmailTest />

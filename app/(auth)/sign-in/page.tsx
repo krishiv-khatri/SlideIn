@@ -1,12 +1,12 @@
 import { Suspense } from "react"
 import { SignInForm } from "@/components/auth/sign-in-form"
-import TailwindSpinner from "@/components/ui/tailwind-spinner"
+import { LoadingState } from "@/components/ui/loading-state"
 
 export default function SignInPage() {
   return (
     <div className="w-full max-w-xl px-4">
       <Suspense 
-        fallback={<TailwindSpinner />}
+        fallback={<LoadingState text="Loading sign in form..." variant="minimal" />}
         key="sign-in-suspense"
       >
         <SignInForm />
