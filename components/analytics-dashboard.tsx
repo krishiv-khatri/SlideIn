@@ -5,6 +5,7 @@ import { Inbox, Flame, Eye } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { createBrowserClient } from "@supabase/ssr"
 import { toast } from "sonner"
+import { LoadingState } from "@/components/ui/loading-state"
 
 export function AnalyticsDashboard() {
   const [isLoading, setIsLoading] = useState(true)
@@ -74,7 +75,7 @@ export function AnalyticsDashboard() {
     <div className="analytics-dashboard-container w-full">
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <div className="animate-spin h-10 w-10 border-4 border-pink-500 border-t-transparent rounded-full"></div>
+          <LoadingState text="Loading analytics..." variant="minimal" size="lg" />
         </div>
       ) : (
         <>

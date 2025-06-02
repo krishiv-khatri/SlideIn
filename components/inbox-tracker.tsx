@@ -19,6 +19,7 @@ import { createBrowserClient } from "@supabase/ssr"
 import { formatDistanceToNow } from "date-fns"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
+import { LoadingState } from "@/components/ui/loading-state"
 
 interface EmailEvent {
   id: string
@@ -210,7 +211,7 @@ export function InboxTracker() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex justify-center py-16">
-              <div className="animate-spin h-10 w-10 border-4 border-pink-500 border-t-transparent rounded-full"></div>
+              <LoadingState text="Loading inbox data..." variant="minimal" size="lg" />
             </div>
           ) : (
             <div className="overflow-x-auto">
