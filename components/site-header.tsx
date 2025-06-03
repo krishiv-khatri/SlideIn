@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import Link from "next/link"
 import { MenuIcon } from "lucide-react"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -30,8 +31,10 @@ export function SiteHeader({ className }: SiteHeaderProps) {
         </div>
         <h1 className="text-xl font-semibold md:ml-4">Dashboard</h1>
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        {/* Additional header items can go here */}
+      <div className="ml-auto flex items-center gap-4">
+        <Link href="/pricing" className="text-sm font-medium hover:text-primary">
+          Pricing
+        </Link>
       </div>
     </header>
   )

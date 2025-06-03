@@ -122,10 +122,9 @@ export function AppSidebar({
         icon: Settings,
       },
       {
-        title: "Profile",
-        url: "/profile",
+        title: "Account",
+        url: "/account",
         icon: User,
-        comingSoon: true
       },
       {
         title: "Help",
