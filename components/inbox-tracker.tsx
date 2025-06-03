@@ -20,6 +20,7 @@ import { formatDistanceToNow } from "date-fns"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface EmailEvent {
   id: string
@@ -131,6 +132,45 @@ export function InboxTracker() {
       toast.success('Removed from important')
     }
   }
+
+  const handleArchiveEmail = async (emailId: string) => {
+    if (!supabase) {
+      toast.error('Database connection not available');
+      return;
+    }
+
+    try {
+      // Get current session for user ID
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user?.id) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please try signing in again.');
+        return;
+      }
+
+      // Show loading toast
+      toast.info('Archiving email...');
+
+      // Delete from email_events table
+      const { error: deleteError } = await supabase
+        .from('email_events')
+        .delete()
+        .eq('id', emailId);
+
+      if (deleteError) {
+        console.error('Error deleting email:', deleteError);
+        throw deleteError;
+      }
+
+      // Update local state
+      setEmails(prevEmails => prevEmails.filter(email => email.id !== emailId));
+      
+      toast.success('Email archived successfully');
+    } catch (error) {
+      console.error('Error archiving email:', error);
+      toast.error('Failed to archive email');
+    }
+  };
 
   const filteredEmails = emails.filter((email) => {
     // First apply tab filtering
@@ -317,19 +357,39 @@ export function InboxTracker() {
                               <DropdownMenuContent align="end" className="w-48 rounded-xl border border-gray-200 shadow-lg p-1.5">
                                 <DropdownMenuLabel className="text-xs font-semibold text-gray-500 px-2 py-1.5">Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator className="my-1 bg-gray-100" />
-                                <DropdownMenuItem className="text-sm flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 hover:bg-gray-50">
+                                <DropdownMenuItem className="text-sm flex items-center gap-2 cursor-not-allowed opacity-60 rounded-lg px-2 py-1.5 hover:bg-gray-50">
                                   <RefreshCcw className="h-4 w-4 text-gray-500" />
-                                  Follow-Up
+                                  <span className="flex-1">Follow-Up</span>
+                                  <span className="text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">Soon</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-sm flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 hover:bg-gray-50">
+                                <DropdownMenuItem className="text-sm flex items-center gap-2 cursor-not-allowed opacity-60 rounded-lg px-2 py-1.5 hover:bg-gray-50">
                                   <Edit className="h-4 w-4 text-gray-500" />
-                                  View Details
+                                  <span className="flex-1">View Details</span>
+                                  <span className="text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">Soon</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="my-1 bg-gray-100" />
-                                <DropdownMenuItem className="text-sm flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 hover:bg-gray-50 hover:text-pink-600 group">
-                                  <Archive className="h-4 w-4 text-gray-500 group-hover:text-pink-600" />
-                                  Archive
-                                </DropdownMenuItem>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-sm flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 hover:bg-pink-50 hover:text-pink-600 group" onSelect={(e) => e.preventDefault()}>
+                                      <Archive className="h-4 w-4 text-gray-500 group-hover:text-pink-600" />
+                                      Archive
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Archive Email</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to archive this email? This action cannot be undone and the email will be permanently removed from your tracking list.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleArchiveEmail(email.id)} className="bg-pink-600 text-white hover:bg-pink-700">
+                                        Archive
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
