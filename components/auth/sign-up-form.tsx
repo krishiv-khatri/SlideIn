@@ -147,7 +147,7 @@ export function SignUpForm() {
             />
             <Label htmlFor="privacy" className="text-sm font-normal leading-tight cursor-pointer">
               I agree to the{" "}
-              <Link href="/privacy-policy" className="text-pink-500 hover:text-pink-600 transition-colors">
+              <Link href="https://www.slidein.now/privacy-policy" className="text-pink-500 hover:text-pink-600 transition-colors">
                 Privacy Policy
               </Link>
               {" "}and consent to the processing of my data

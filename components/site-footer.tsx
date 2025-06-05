@@ -42,7 +42,7 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-gray-500 hover:text-pink-500 text-sm transition-colors">
+                <Link href="https://www.slidein.now/privacy-policy" className="text-gray-500 hover:text-pink-500 text-sm transition-colors">
                   Privacy Policy
                 </Link>
               </li>
