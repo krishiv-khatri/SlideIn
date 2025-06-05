@@ -33,7 +33,7 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center space-x-6">
             <Link
-              href="https://slide-in.vercel.app/privacy-policy"
+              href="https://www.slidein.now/privacy-policy"
               className="text-gray-600 hover:text-pink-500 transition-colors"
             >
               Privacy Policy
