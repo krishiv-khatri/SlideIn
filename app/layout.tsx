@@ -11,6 +11,7 @@ export const metadata: Metadata = {
     "SlideIn is an AI-powered platform to generate, send, and track personalised cold emails. Built for job seekers, founders, and freelancers.",
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "48x48 32x32 16x16" },
       { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon-16x16.svg", sizes: "16x16", type: "image/svg+xml" },
       { url: "/favicon-192x192.svg", sizes: "192x192", type: "image/svg+xml" }
@@ -51,6 +52,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48 32x32 16x16" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon-16x16.svg" sizes="16x16" type="image/svg+xml" />
         <link rel="icon" href="/favicon-192x192.svg" sizes="192x192" type="image/svg+xml" />
