@@ -35,9 +35,7 @@ export const getAuthUrl = () => {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline', // Required for refresh token
     scope: [
-      'https://www.googleapis.com/auth/gmail.send',
-      'https://www.googleapis.com/auth/gmail.compose',
-      'https://www.googleapis.com/auth/gmail.modify'
+      'https://www.googleapis.com/auth/gmail.send'
     ],
     prompt: 'consent' // Force consent screen to ensure we get refresh token
   });
