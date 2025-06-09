@@ -9,11 +9,7 @@ export const metadata: Metadata = {
   description:
     "SlideIn is an AI-powered platform to generate, send, and track personalised cold emails. Built for job seekers, founders, and freelancers.",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon-16x16.svg", sizes: "16x16", type: "image/svg+xml" },
-      { url: "/favicon-192x192.svg", sizes: "192x192", type: "image/svg+xml" }
-    ]
+    icon: "/favicon.ico"
   },
   openGraph: {
     title: "SlideIn – AI Cold Email Tool for Outreach & Job Applications",

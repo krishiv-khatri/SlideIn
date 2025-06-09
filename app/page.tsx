@@ -215,7 +215,7 @@ export default function LandingPage() {
               <h3 className="font-semibold text-gray-900 mb-3">Legal</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link href="https://slide-in.vercel.app/privacy-policy" className="text-gray-500 hover:text-pink-500 text-sm">
+                  <Link href="https://slidein.now/privacy-policy" className="text-gray-500 hover:text-pink-500 text-sm">
                     Privacy Policy
                   </Link>
                 </li>
