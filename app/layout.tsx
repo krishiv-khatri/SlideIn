@@ -10,9 +10,7 @@ export const metadata: Metadata = {
   description:
     "SlideIn is an AI-powered platform to generate, send, and track personalised cold emails. Built for job seekers, founders, and freelancers.",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico"
+    icon: "/favicon.ico"
   },
   openGraph: {
     title: "SlideIn – AI Cold Email Tool for Outreach & Job Applications",
@@ -49,8 +47,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        {/* Favicon links removed in favor of metadata approach */}
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <EmojiProvider>
