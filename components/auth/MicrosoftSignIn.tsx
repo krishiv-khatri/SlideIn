@@ -13,6 +13,7 @@ export function MicrosoftSignIn() {
   const handleMicrosoftSignIn = async () => {
     try {
       setIsLoading(true);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {

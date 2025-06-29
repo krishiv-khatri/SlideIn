@@ -70,6 +70,21 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${requestUrl.origin}/sign-in?error=no_user_email`)
     }
 
+    // Check for user consent agreements
+    const { data: userConsent } = await supabase
+      .from('user_usage_agreements')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    // If the user hasn't agreed to terms, redirect to consent page
+    if (!userConsent || !userConsent.proper_use_accepted) {
+      console.log('User needs to accept terms before connecting Gmail account')
+      return NextResponse.redirect(
+        `${requestUrl.origin}/auth/consent?redirect_to=${encodeURIComponent('/settings?connect=gmail')}`
+      )
+    }
+
     // No need to manually sync user data - the database trigger handles this automatically
 
     // Check if this is the first account for this user

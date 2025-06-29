@@ -23,6 +23,7 @@ export function SignUpForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [privacyConsent, setPrivacyConsent] = useState(false)
+  const [properUseConsent, setProperUseConsent] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -34,20 +35,52 @@ export function SignUpForm() {
 
     if (!privacyConsent) {
       setError("Please agree to the Privacy Policy to continue")
+      setIsLoading(false)
+      return
+    }
+
+    if (!properUseConsent) {
+      setError("Please confirm proper use of SlideIn to continue")
+      setIsLoading(false)
       return
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${location.origin}/auth/callback`,
+          data: {
+            // Store these in the user metadata in case we need it later
+            privacy_accepted: privacyConsent,
+            proper_use_accepted: properUseConsent
+          }
         },
       })
 
       if (error) {
         throw error
+      }
+
+      // If sign-up was successful and user created
+      if (data?.user) {
+        // Insert the consent records
+        const { error: consentError } = await supabase
+          .from('user_usage_agreements')
+          .insert([
+            { 
+              user_id: data.user.id, 
+              privacy_accepted: privacyConsent,
+              proper_use_accepted: properUseConsent,
+            }
+          ])
+        
+        if (consentError) {
+          console.error('Error saving consent records:', consentError)
+          // We don't want to fail the sign-up if this fails
+        }
       }
 
       setSuccess("Account created successfully! Please check your email for verification.")
@@ -74,7 +107,7 @@ export function SignUpForm() {
         />
         <div className="text-center w-full">
           <h1 className="text-3xl font-bold" style={{ fontFamily: 'Satoshi, sans-serif', fontWeight: 700 }}>Create an account</h1>
-          <p className="text-muted-foreground text-base" style={{ fontFamily: 'Satoshi, sans-serif' }}>Sign up to start using SlideIn</p>
+          <p className="text-muted-foreground text-base" style={{ fontFamily: 'Satoshi, sans-serif' }}>Sign up to start connecting with purpose</p>
         </div>
       </CardHeader>
       <form onSubmit={handleSubmit} suppressHydrationWarning>
@@ -137,21 +170,49 @@ export function SignUpForm() {
               suppressHydrationWarning
             />
           </div>
-          <div className="flex items-center space-x-3 pt-2">
-            <Checkbox 
-              id="privacy" 
-              checked={privacyConsent}
-              onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
-              className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500" 
-              suppressHydrationWarning 
-            />
-            <Label htmlFor="privacy" className="text-sm font-normal leading-tight cursor-pointer">
-              I agree to the{" "}
-              <Link href="/privacy-policy" className="text-pink-500 hover:text-pink-600 transition-colors">
-                Privacy Policy
-              </Link>
-              {" "}and consent to the processing of my data
-            </Label>
+
+          {/* Enhanced consent section */}
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h3 className="font-medium text-gray-800 mb-4">Usage Agreements</h3>
+            
+            <div className="bg-blue-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-700 mb-2">
+                SlideIn is designed for <span className="font-semibold">personal, one-to-one communication</span> with 
+                contacts you have a legitimate reason to reach out to. It is not for bulk email or unsolicited marketing.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <Checkbox 
+                  id="privacy" 
+                  checked={privacyConsent}
+                  onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
+                  className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500 mt-1" 
+                  suppressHydrationWarning 
+                />
+                <Label htmlFor="privacy" className="text-sm font-normal cursor-pointer">
+                  I agree to the{" "}
+                  <Link href="/privacy-policy" className="text-pink-500 hover:text-pink-600 transition-colors font-medium">
+                    Privacy Policy
+                  </Link>
+                  {" "}and consent to the processing of my data
+                </Label>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <Checkbox 
+                  id="proper-use" 
+                  checked={properUseConsent}
+                  onCheckedChange={(checked) => setProperUseConsent(checked as boolean)}
+                  className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500 mt-1" 
+                  suppressHydrationWarning 
+                />
+                <Label htmlFor="proper-use" className="text-sm font-normal cursor-pointer">
+                  I confirm I will only use SlideIn for personal, one-to-one communication. I will <span className="font-medium text-red-600">not use SlideIn for unsolicited commercial bulk emails or spam</span>.
+                </Label>
+              </div>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-6 px-8 pb-8">

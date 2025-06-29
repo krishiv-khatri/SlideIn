@@ -6,7 +6,7 @@ import { TypingAnimation } from "@/components/typing-animation"
 
 export const metadata: Metadata = {
   title: "SlideIn - Your AI Email Assistant",
-  description: "Send better cold emails with AI-powered insights and smart follow-ups",
+  description: "Personalize one-to-one emails with AI-powered insights and smart follow-ups for networking and career growth",
 }
 
 export default function LandingPage() {
@@ -64,8 +64,8 @@ export default function LandingPage() {
               Your AI Email Assistant
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Write better cold emails, track responses, and never miss a follow-up.
-              Connect with more people, without the busywork.
+              Write better personalized emails, track responses, and never miss a follow-up.
+              Perfect for students and professionals seeking to build meaningful connections.
           </p>
           </div>
           <div className="flex justify-center gap-4">
@@ -142,14 +142,24 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* Subtle Usage Info */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white border-t border-gray-100">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-gray-600 text-sm">
+            SlideIn is designed for personal, one-to-one communication — helping students and professionals connect with mentors, 
+            recruiters, and hiring managers. <span className="opacity-75">Not intended for bulk email or marketing outreach.</span>
+          </p>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-pink-500 rounded-2xl p-12 text-center">
           <h2 className={`${satoshi.className} text-3xl font-bold text-white mb-4`}>
-            Ready to Write Better Cold Emails?
+            Ready to Connect with Mentors and Recruiters?
           </h2>
           <p className="text-white/90 mb-8 max-w-2xl mx-auto">
-            Join people who are already getting more responses with SlideIn's smart email assistant.
+            Join students and professionals who are building meaningful relationships with personalized outreach using SlideIn.
           </p>
           <Link
             href="/sign-up"

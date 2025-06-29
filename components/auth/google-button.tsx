@@ -21,7 +21,7 @@ export function GoogleButton() {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-          },
+          }
         }
       })
 
