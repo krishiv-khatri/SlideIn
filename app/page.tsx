@@ -33,7 +33,7 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center space-x-6">
             <Link
-              href="/pricing"
+              href="/privacy-policy"
               className="text-gray-600 hover:text-pink-500 transition-colors"
             >
               Privacy Policy

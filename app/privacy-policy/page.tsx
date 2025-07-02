@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
         {/* Document Header */}
         <div className="mb-12 space-y-2">
           <h1 className="text-3xl font-semibold text-gray-900">Privacy Policy</h1>
-          <p className="text-gray-500">Last Updated: May 30, 2025</p>
+          <p className="text-gray-500">Last Updated: July 1, 2024</p>
         </div>
 
         {/* Introduction */}
@@ -39,6 +39,7 @@ export default function PrivacyPolicy() {
               { id: "information-collected", title: "Information We Collect" },
               { id: "information-use", title: "How We Use Your Information" },
               { id: "gmail-api", title: "Gmail API & Google User Data Compliance" },
+              { id: "google-limited-use", title: "Google Limited Use Policy Compliance" },
               { id: "email-tracking", title: "Email Tracking" },
               { id: "data-sharing", title: "Data Sharing and Third Parties" },
               { id: "data-retention", title: "Data Retention" },
@@ -77,8 +78,9 @@ export default function PrivacyPolicy() {
               <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-2">Email Data (via Gmail API)</h3>
                 <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                  <li>Email subject lines, recipients, and metadata</li>
-                  <li>Sent messages and drafts (only if used for sending or tracking)</li>
+                  <li>We only have access to send emails on your behalf (gmail.send permission)</li>
+                  <li>We do not read or access your email subjects, content, or metadata</li>
+                  <li>We only process the emails that you explicitly compose and send through our application</li>
                 </ul>
               </div>
 
@@ -120,9 +122,24 @@ export default function PrivacyPolicy() {
                 <li>We do not sell or share Gmail data</li>
                 <li>We do not use Gmail data for advertising or marketing</li>
                 <li>We access Gmail data only to support the features you explicitly enable</li>
-          </ul>
+              </ul>
             </div>
-        </section>
+          </section>
+
+          <section id="google-limited-use">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Limited Use Policy Compliance</h2>
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <p className="text-gray-600 font-medium mb-3">SlideIn confirms full compliance with Google's Limited Use policy:</p>
+              <ul className="list-disc pl-5 text-gray-600 space-y-2">
+                <li><strong>Limited Access:</strong> We only request and use the gmail.send permission, which allows us to send emails on your behalf but does not give us access to read your emails.</li>
+                <li><strong>No AI/ML Training:</strong> We do not use any data from emails sent through our application via the Gmail API to develop, improve, or train generalized AI/ML models.</li>
+                <li><strong>No Retention for Analytics:</strong> We do not retain email content composed in our application for any machine learning or analytics purposes.</li>
+                <li><strong>User Consent Required:</strong> All email content is processed only with user consent and for the sole purpose of user-initiated communication.</li>
+                <li><strong>User Control:</strong> Users are able to view, edit, and approve all message content before it is sent.</li>
+                <li><strong>Limited Use Compliance:</strong> The use of raw or derived user data received from Workspace APIs will adhere to the Google User Data Policy, including the Limited Use requirements.</li>
+              </ul>
+            </div>
+          </section>
 
           <section id="email-tracking">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Email Tracking</h2>
