@@ -129,15 +129,13 @@ export default function PrivacyPolicy() {
           <section id="google-limited-use">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Limited Use Policy Compliance</h2>
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <p className="text-gray-600 font-medium mb-3">SlideIn confirms full compliance with Google's Limited Use policy:</p>
-              <ul className="list-disc pl-5 text-gray-600 space-y-2">
-                <li><strong>Limited Access:</strong> We only request and use the gmail.send permission, which allows us to send emails on your behalf but does not give us access to read your emails.</li>
-                <li><strong>No AI/ML Training:</strong> We do not use any data from emails sent through our application via the Gmail API to develop, improve, or train generalized AI/ML models.</li>
-                <li><strong>No Retention for Analytics:</strong> We do not retain email content composed in our application for any machine learning or analytics purposes.</li>
-                <li><strong>User Consent Required:</strong> All email content is processed only with user consent and for the sole purpose of user-initiated communication.</li>
-                <li><strong>User Control:</strong> Users are able to view, edit, and approve all message content before it is sent.</li>
-                <li><strong>Limited Use Compliance:</strong> The use of raw or derived user data received from Workspace APIs will adhere to the Google User Data Policy, including the Limited Use requirements.</li>
-              </ul>
+              <p className="text-gray-600 font-medium mb-3">Google API Services User Data Policy Compliance</p>
+              <p className="text-gray-600 mb-3">
+                SlideIn's use of information received from <a href="https://developers.google.com/workspace/workspace-api-user-data-developer-policy" className="text-pink-600 hover:underline">Google APIs</a> will adhere to the <a href="https://developers.google.com/workspace/workspace-api-user-data-developer-policy#limited-use" className="text-pink-600 hover:underline">Google API Services User Data Policy</a>, including the Limited Use requirements.
+              </p>
+              <p className="text-gray-600 mb-3">
+                We do not use Gmail or Workspace API data to develop, improve, or train generalized AI/ML models. SlideIn only uses authorized data to allow users to send emails they have explicitly created, reviewed, and approved. We do not store, analyze, or share the content of emails or metadata beyond what is required for user-requested actions.
+              </p>
             </div>
           </section>
 
