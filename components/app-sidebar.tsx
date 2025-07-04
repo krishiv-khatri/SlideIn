@@ -5,13 +5,12 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { 
   BarChart3, 
-  Mail, 
+  Edit3, 
   Inbox, 
   Settings, 
-  User, 
-  HelpCircle,
-  Search,
-  Menu
+  Menu,
+  TrendingUp,
+  MailOpen
 } from "lucide-react"
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -29,7 +28,6 @@ import {
 import { NavUser } from "./nav-user"
 import { NavMain } from "./nav-main"
 import { NavSecondary } from "./nav-secondary"
-import { NavDocuments } from "./nav-documents"
 import { NavLogo } from "./nav-logo"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "./ui/button"
@@ -40,6 +38,18 @@ interface AppSidebarProps {
   className?: string
 }
 
+// Helper function to format relative time
+const formatTimeAgo = (timestamp: string): string => {
+  const now = new Date()
+  const time = new Date(timestamp)
+  const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+  
+  if (diffInMinutes < 1) return 'just now'
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+  if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+  return `${Math.floor(diffInMinutes / 1440)}d ago`
+}
+
 export function AppSidebar({ 
   variant = "sidebar", 
   collapsible = "icon", 
@@ -47,19 +57,64 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const { state, toggleSidebar } = useSidebar()
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [emailStats, setEmailStats] = useState({
+    totalSent: 0,
+    totalOpened: 0,
+    recentActivity: [] as Array<{
+      type: 'sent' | 'opened',
+      timestamp: string,
+      subject: string
+    }>
+  })
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
 
-  // Fetch user data on component mount
+  // Fetch user data and email stats
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndStats = async () => {
+      setIsLoadingStats(true)
       const supabase = createClient()
       const { data, error } = await supabase.auth.getUser()
       
       if (!error && data?.user) {
         setUser(data.user)
+        
+        try {
+          // Fetch email statistics
+          const { data: emailEvents, error: emailError } = await supabase
+            .from('email_events')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .order('sent_at', { ascending: false })
+            .limit(50)
+          
+          if (!emailError && emailEvents) {
+            const totalSent = emailEvents.length
+            // Only count legitimate opens (subtract 1 for false positive)
+            const totalOpened = emailEvents.filter(e => e.status === 'Opened' && e.opens > 1).length
+            
+            // Get recent activity (last 5 events) - show all emails, but categorize properly
+            const recentActivity = emailEvents
+              .slice(0, 5)
+              .map(event => ({
+                type: event.opens > 1 ? 'opened' as const : 'sent' as const,
+                timestamp: event.opens > 1 && event.last_opened ? event.last_opened : event.sent_at,
+                subject: event.subject
+              }))
+            
+            setEmailStats({
+              totalSent,
+              totalOpened,
+              recentActivity
+            })
+          }
+        } catch (error) {
+          console.error('Error fetching email stats:', error)
+        }
       }
+      setIsLoadingStats(false)
     }
     
-    fetchUser()
+    fetchUserAndStats()
   }, [])
   
   // This effect will add a data attribute to the document body
@@ -102,17 +157,17 @@ export function AppSidebar({
       {
         title: "Email Generator",
         url: "/email-generator",
-        icon: Mail,
+        icon: Edit3,
       },
       {
         title: "Inbox Tracker",
         url: "/inbox",
-        icon: Inbox,
+        icon: MailOpen,
       },
       {
         title: "Analytics",
         url: "/analytics",
-        icon: BarChart3,
+        icon: TrendingUp,
       },
     ],
     navSecondary: [
@@ -121,45 +176,8 @@ export function AppSidebar({
         url: "/settings",
         icon: Settings,
       },
-      {
-        title: "Profile",
-        url: "/profile",
-        icon: User,
-        comingSoon: true
-      },
-      {
-        title: "Help",
-        url: "/help",
-        icon: HelpCircle,
-        comingSoon: true
-      },
-      {
-        title: "Search",
-        url: "/search",
-        icon: Search,
-        comingSoon: true
-      },
     ],
-    documents: [
-      {
-        name: "Emails",
-        url: "/emails",
-        icon: Inbox,
-        comingSoon: true
-      },
-      {
-        name: "Reports",
-        url: "/reports",
-        icon: BarChart3,
-        comingSoon: true
-      },
-      {
-        name: "Drafts",
-        url: "/drafts",
-        icon: Mail,
-        comingSoon: true
-      },
-    ],
+    documents: [],
   }
   
   return (
@@ -201,7 +219,38 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent className="py-2">
         <NavMain items={sidebarData.navMain} />
-        <NavDocuments items={sidebarData.documents} className="mt-6" />
+        
+
+        {/* Recent Activity Section */}
+        {state !== "collapsed" && (
+          <div className="relative flex w-full min-w-0 flex-col p-2">
+            <div className="flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mb-2">
+              Recent Activity
+            </div>
+            <div className="space-y-3 px-2">
+              {emailStats.recentActivity.length > 0 ? (
+                emailStats.recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${activity.type === 'opened' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+                    <div className="flex flex-col">
+                      <span className="text-sidebar-foreground/80 text-xs font-medium leading-tight">
+                        {activity.subject.length > 28 ? activity.subject.substring(0, 28) + '...' : activity.subject}
+                      </span>
+                      <span className="text-sidebar-foreground/50 text-xs">
+                        {activity.type === 'opened' ? 'opened' : 'sent'} {formatTimeAgo(activity.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-sidebar-foreground/50 italic px-2">
+                  No recent activity
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter className={`border-t border-border ${state === "collapsed" ? "flex items-center justify-center py-4" : ""}`}>

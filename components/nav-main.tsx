@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -30,6 +31,7 @@ export function NavMain({ items, className }: NavMainProps) {
   
   return (
     <SidebarGroup className={className}>
+      <SidebarGroupLabel>Workspace</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {

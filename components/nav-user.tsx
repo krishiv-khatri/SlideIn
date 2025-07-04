@@ -1,7 +1,6 @@
 "use client"
 
-import { BellIcon, CreditCardIcon, LogOutIcon, UserCircleIcon, MoreVerticalIcon } from "lucide-react"
-import Link from "next/link"
+import { LogOutIcon, MoreVerticalIcon } from "lucide-react"
 import { useRouter } from 'next/navigation'
 import { useState } from "react"
 
@@ -9,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -109,9 +107,10 @@ export function NavUser({ user }: NavUserProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side="right"
-            align="center"
+            side="top"
+            align="end"
             sideOffset={8}
+            alignOffset={-1000}
             style={{ zIndex: 999 }}
           >
             <div className="flex items-center gap-2 px-3 py-2 text-left text-sm">
@@ -130,27 +129,6 @@ export function NavUser({ user }: NavUserProps) {
                 <span className="truncate text-xs text-muted-foreground">{user.email}</span>
               </div>
             </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link href="/account" className="flex items-center">
-                  <UserCircleIcon className="mr-2 h-4 w-4" />
-                  <span>Account</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/billing" className="flex items-center">
-                  <CreditCardIcon className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/notifications" className="flex items-center">
-                  <BellIcon className="mr-2 h-4 w-4" />
-                  <span>Notifications</span>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer">
               <LogOutIcon className="mr-2 h-4 w-4" />
