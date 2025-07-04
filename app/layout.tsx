@@ -4,11 +4,11 @@ import { UserProvider } from "@/components/providers/user-provider"
 import "./globals.css"
 import { inter } from "./fonts"
 import { EmojiProvider } from "@/components/providers/emoji-provider"
+import { landingPageMetadata } from "./metadata"
 
+// Use landingPageMetadata for the root path
 export const metadata: Metadata = {
-  title: "SlideIn – AI Cold Email Tool for Outreach & Job Applications",
-  description:
-    "SlideIn is an AI-powered platform to generate, send, and track personalised cold emails. Built for job seekers, founders, and freelancers.",
+  ...landingPageMetadata,
   icons: {
     icon: "/favicon.ico"
   },
