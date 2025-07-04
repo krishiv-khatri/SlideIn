@@ -609,6 +609,7 @@ export function EmailGenerator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Render function
   return (
     <div className="w-full mx-auto email-generator-container">
       <div className={`w-full mx-auto bg-white rounded-2xl p-4 md:p-8 transition-all duration-300 ${generated ? 'max-w-7xl' : 'max-w-2xl'}`}>
