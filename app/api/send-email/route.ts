@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import { sendEmail, refreshTokenIfNeeded } from '@/lib/gmail';
 import { createEmailTrackingEvent, addTrackingPixelToEmail } from '@/utils/email-tracking';
 
+// Interface for file attachments
+interface EmailAttachment {
+  filename: string;
+  mimeType: string;
+  size: number;
+  data: string; // base64 encoded file data
+}
+
 // Interface for the request body
 interface SendEmailRequest {
   to: string;
@@ -14,6 +22,7 @@ interface SendEmailRequest {
   };
   trackingEnabled?: boolean;
   userId?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function POST(request: Request) {
@@ -21,7 +30,7 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { to, subject, html, gmailTokens, trackingEnabled = false, userId } = body as SendEmailRequest;
+    const { to, subject, html, gmailTokens, trackingEnabled = false, userId, attachments = [] } = body as SendEmailRequest;
     
     console.log('Request body received:', { 
       to, 
@@ -29,7 +38,8 @@ export async function POST(request: Request) {
       htmlLength: html?.length, 
       tokensPresent: !!gmailTokens, 
       trackingEnabled,
-      hasUserId: !!userId
+      hasUserId: !!userId,
+      attachmentsCount: attachments.length
     });
 
     if (!to || !subject || !html || !gmailTokens) {
@@ -96,7 +106,8 @@ export async function POST(request: Request) {
       refreshToken,
       to,
       subject,
-      htmlContent: finalHtml
+      htmlContent: finalHtml,
+      attachments
     });
 
     if (!result.success) {

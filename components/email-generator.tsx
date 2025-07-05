@@ -175,6 +175,7 @@ export function EmailGenerator() {
   const [selectedAccount, setSelectedAccount] = useState<string>('')
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [trackingEnabled, setTrackingEnabled] = useState(true)
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -465,16 +466,20 @@ export function EmailGenerator() {
       setSendStatus('idle');
       
       try {
+        // Convert files to base64 if any are attached
+        const attachments = attachedFiles.length > 0 ? await convertFilesToBase64(attachedFiles) : [];
+        
         const requestBody = {
           to: recipientEmail,
           subject,
           html: emailBody.replace(/\n/g, '<br>'),
           gmailTokens,
           trackingEnabled,
-          userId
+          userId,
+          attachments
         };
         
-        console.log('Sending email request with trackingEnabled:', trackingEnabled);
+        console.log('Sending email request with trackingEnabled:', trackingEnabled, 'attachments:', attachments.length);
         
         const response = await fetch('/api/send-email', {
           method: 'POST',
@@ -506,15 +511,20 @@ export function EmailGenerator() {
 
         setSendStatus('success');
         
-        // Customize success message based on tracking
+        // Customize success message based on tracking and attachments
         console.log('Response received - trackingEnabled:', trackingEnabled, 'emailId:', responseData.emailId);
+        const attachmentText = attachedFiles.length > 0 ? ` with ${attachedFiles.length} attachment${attachedFiles.length > 1 ? 's' : ''}` : '';
+        
         if (trackingEnabled && responseData.emailId) {
           console.log('Showing tracking success message');
-          toast.success("Email sent with tracking enabled! 🎉");
+          toast.success(`Email sent with tracking enabled${attachmentText}! 🎉`);
         } else {
           console.log('Showing general success message');
-          toast.success("Email sent successfully! 🎉");
+          toast.success(`Email sent successfully${attachmentText}! 🎉`);
         }
+        
+        // Clear attached files after successful send
+        setAttachedFiles([]);
         
         // Reset the send status after 2 seconds
         setTimeout(() => {
@@ -549,6 +559,76 @@ export function EmailGenerator() {
 
   const handleGmailConnect = () => {
     window.location.href = '/api/gmail-oauth/start';
+  };
+
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = Array.from(event.target.files || []);
+    
+    if (newFiles.length === 0) return;
+    
+    // Combine with existing files
+    const allFiles = [...attachedFiles, ...newFiles];
+    
+    // Check file size limits (25MB per file, Gmail limit)
+    const maxFileSize = 25 * 1024 * 1024; // 25MB
+    const oversizedFiles = allFiles.filter(file => file.size > maxFileSize);
+    
+    if (oversizedFiles.length > 0) {
+      toast.error(`Some files are too large. Maximum file size is 25MB.`);
+      return;
+    }
+    
+    // Check total attachment size (25MB total)
+    const totalSize = allFiles.reduce((sum, file) => sum + file.size, 0);
+    if (totalSize > maxFileSize) {
+      toast.error(`Total attachment size exceeds 25MB limit.`);
+      return;
+    }
+    
+    // Check for duplicate files (by name and size)
+    const uniqueFiles = allFiles.filter((file, index, self) => 
+      index === self.findIndex(f => f.name === file.name && f.size === file.size)
+    );
+    
+    setAttachedFiles(uniqueFiles);
+    
+    if (newFiles.length > 0) {
+      toast.success(`${newFiles.length} file(s) attached successfully.`);
+    }
+    
+    // Clear the input so the same file can be selected again if needed
+    event.target.value = '';
+  };
+
+  // Remove a specific file
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Convert files to base64 for sending
+  const convertFilesToBase64 = async (files: File[]): Promise<any[]> => {
+    const convertedFiles = await Promise.all(
+      files.map(file => {
+        return new Promise<any>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64String = reader.result as string;
+            // Remove data:mime-type;base64, prefix
+            const base64Data = base64String.split(',')[1];
+            resolve({
+              filename: file.name,
+              mimeType: file.type || 'application/octet-stream',
+              size: file.size,
+              data: base64Data
+            });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+    return convertedFiles;
   };
 
   // In the useEffect for initialization (modify your existing initialization code)
@@ -829,10 +909,10 @@ export function EmailGenerator() {
             </CardContent>
           </Card>
         ) : (
-          <div className="w-full grid gap-3 md:grid-cols-[minmax(500px,1fr),minmax(400px,1fr)] transition-all duration-300">
+          <div className="w-full grid gap-3 md:grid-cols-[minmax(500px,1fr),minmax(400px,1fr)] transition-all duration-300 overflow-visible">
             <Card className="md:col-span-1 shadow-none border-none">
               <CardContent className="pt-6">
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-none overflow-visible">
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
                     <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
@@ -847,10 +927,70 @@ export function EmailGenerator() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="resume-upload" className="text-sm font-medium text-gray-700">Attach Resume or File</Label>
-                    <div className="flex items-center gap-3">
-                      <input id="resume-upload" type="file" disabled className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 file:cursor-not-allowed" />
-                      <span className="text-xs text-gray-400 italic">Coming soon</span>
+                    <Label htmlFor="resume-upload" className="text-sm font-medium text-gray-700">Attach Files</Label>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input 
+                          id="resume-upload" 
+                          type="file" 
+                          multiple
+                          onChange={handleFileSelect}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 cursor-pointer" 
+                          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.zip,.rar"
+                        />
+                        {attachedFiles.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => document.getElementById('resume-upload')?.click()}
+                            className="flex-shrink-0 text-xs px-3"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Add More
+                          </Button>
+                        )}
+                      </div>
+                      {attachedFiles.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-600">Attached files ({attachedFiles.length}):</p>
+                            {attachedFiles.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setAttachedFiles([])}
+                                className="text-red-500 hover:text-red-700 text-xs h-6"
+                              >
+                                Clear All
+                              </Button>
+                            )}
+                          </div>
+                          <div className="max-h-32 overflow-y-auto space-y-2 pr-2">
+                            {attachedFiles.map((file, index) => (
+                              <div key={`${file.name}-${index}`} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="text-sm font-medium text-gray-700 truncate">{file.name}</span>
+                                  <span className="text-xs text-gray-500 flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFile(index)}
+                                  className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400">
+                        Support for common file types. Max 25MB per file. You can select multiple files at once or add them one by one.
+                      </p>
                     </div>
                   </div>
                   <div className="flex justify-between">
@@ -864,6 +1004,7 @@ export function EmailGenerator() {
                         setGenerated(false)
                         setUrl("")
                         setGoal("")
+                        setAttachedFiles([])
                       }}
                       variant="ghost"
                     >
