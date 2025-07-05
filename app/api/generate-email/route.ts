@@ -76,6 +76,7 @@ interface GenerateEmailRequest {
   recipientName?: string;
   recipientEmail?: string;
   url?: string;
+  warmth?: number;
 }
 
 // Function to extract potential name from URL
@@ -614,10 +615,10 @@ export async function POST(request: Request) {
     
     // Parse the request body
     const body: GenerateEmailRequest = await request.json();
-    let { urlContent, goal, tone, userName, recipientName, recipientEmail, url } = body;
+    let { urlContent, goal, tone, userName, recipientName, recipientEmail, url, warmth } = body;
     let extractedEmails: string[] = [];
 
-    console.log('Request parameters:', { goal, tone, userName, url });
+    console.log('Request parameters:', { goal, tone, userName, url, warmth });
 
     // Validate required fields
     if (!urlContent) {
@@ -761,6 +762,12 @@ export async function POST(request: Request) {
     console.log('Generating email with Gemini...');
     
     // Create a dynamic prompt based on the input parameters
+    const warmthLevel = warmth || 50;
+    const warmthDescription = warmthLevel <= 25 ? "very professional and formal" : 
+                             warmthLevel <= 50 ? "balanced with professional warmth" : 
+                             warmthLevel <= 75 ? "friendly and conversational" : 
+                             "very personal and warm";
+    
     const prompt = `
       Generate a highly personalized, natural cold email using the following information:
 
@@ -768,6 +775,7 @@ export async function POST(request: Request) {
       - URL Content Preview: ${truncatedContent}
       - Goal: ${goal}
       - Tone: ${tone}
+      - Warmth Level: ${warmthLevel}/100 (${warmthDescription})
       - Sender's Name: ${userName || 'Me'}
       - Recipient's Name: ${recipientName || '[Name]'}
       - Context: ${detectUrlContext(url, truncatedContent)}
@@ -784,7 +792,12 @@ export async function POST(request: Request) {
       - You must *mention exact and real* details that show clear research.
       - Absolutely **no placeholders** like [insert company project].
       - The email must *feel naturally written by a human*, not like a template.
-      - Match the requested tone ("${tone}").
+      - Match the requested tone ("${tone}") with the warmth level (${warmthLevel}/100).
+      - WARMTH LEVEL GUIDANCE:
+        * 1-25: Use very formal language, minimal personal touches, professional distance
+        * 26-50: Professional with some warmth, appropriate personal elements
+        * 51-75: Conversational tone, friendly approach, personal connections
+        * 76-100: Highly personalized, warm language, personal anecdotes when appropriate
       - Clearly state the sender's goal and end with a friendly, low-pressure call to action.
       - Keep the body under 150 words unless a slightly longer message fits the tone.
       - Address the recipient appropriately based on their context (professor for academic, hiring manager for job, etc.)
@@ -811,6 +824,7 @@ export async function POST(request: Request) {
       - Prioritize being real, human, and engaging over sounding formal or robotic.
       - Use complete sentences. Avoid buzzwords and generic phrases like "innovative solutions" or "dynamic environment" unless specifically referenced from research.
       - THE SENDER NAME MUST BE EXACTLY "${userName || 'Me'}", NOT "User" OR ANY OTHER PLACEHOLDER.
+      - Adjust the language formality and personal touches based on the warmth level (${warmthLevel}/100).
 
       Language: English.
     `;

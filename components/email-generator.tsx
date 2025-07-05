@@ -404,7 +404,8 @@ export function EmailGenerator() {
           tone: tone,
           userName: userName,
           recipientEmail: recipientEmail,
-          url: url
+          url: url,
+          warmth: warmth[0] // Add warmth value to the request
         }),
       });
 
@@ -862,9 +863,40 @@ export function EmailGenerator() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label>Email Tone</Label>
-                    <span className="text-sm text-muted-foreground">Warmth Level</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Warmth Level</span>
+                      <span className="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-1 rounded-full">
+                        {warmth[0]}%
+                      </span>
+                    </div>
                   </div>
-                  <Slider value={warmth} onValueChange={setWarmth} max={100} step={1} className="mb-6" />
+                  
+                  {/* Elegant Warmth Slider */}
+                  <div className="space-y-1">
+                    <div className="relative px-1">
+                      <Slider 
+                        value={warmth} 
+                        onValueChange={setWarmth} 
+                        max={100} 
+                        min={1}
+                        step={1} 
+                        className="relative"
+                      />
+                      {/* Clean indicators */}
+                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Professional</span>
+                        <span>Personal</span>
+                      </div>
+                      <div className="text-center -mt-0.5">
+                        <span className="text-xs text-gray-500">
+                          {warmth[0] <= 25 ? "Very Professional" : 
+                           warmth[0] <= 50 ? "Balanced" : 
+                           warmth[0] <= 75 ? "Friendly" : 
+                           "Very Personal"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                   <RadioGroup value={tone} onValueChange={setTone} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {tones.map((t) => (
                       <div key={t.id}>

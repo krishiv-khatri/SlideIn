@@ -25,7 +25,7 @@ export default function EmailGeneratorSkeleton() {
               <Skeleton className="h-5 w-32" /> {/* Warmth level */}
             </div>
             
-            <Skeleton className="h-6 w-full" /> {/* Slider */}
+            <Skeleton className="h-2 w-full rounded-full" /> {/* Slider */}
             
             {/* Tone selector cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
