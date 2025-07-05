@@ -21,6 +21,7 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 
 interface EmailEvent {
   id: string
@@ -49,6 +50,8 @@ export function InboxTracker() {
   const [emails, setEmails] = useState<EmailEvent[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [starredEmails, setStarredEmails] = useState<Record<string, boolean>>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -190,6 +193,17 @@ export function InboxTracker() {
     return passesTabFilter && passesSearchFilter;
   })
 
+  // Reset current page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab, searchQuery])
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredEmails.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentEmails = filteredEmails.slice(startIndex, endIndex)
+
   const formatSentDate = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true })
@@ -308,8 +322,8 @@ export function InboxTracker() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEmails.length > 0 ? (
-                    filteredEmails.map((email) => (
+                  {currentEmails.length > 0 ? (
+                    currentEmails.map((email) => (
                       <TableRow key={email.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                         <TableCell className="py-4 px-6 font-medium text-gray-900">{email.recipient_email}</TableCell>
                         <TableCell className="py-4 px-6 text-gray-700 max-w-xs truncate">{email.subject}</TableCell>
@@ -429,26 +443,80 @@ export function InboxTracker() {
           )}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-sm text-gray-500 flex items-center justify-between">
             <div>
-              {filteredEmails.length > 0 ? `Showing ${filteredEmails.length} of ${emails.length} emails` : 'No emails found'}
+              {filteredEmails.length > 0 ? (
+                <>
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredEmails.length)} of {filteredEmails.length} emails
+                  {totalPages > 1 && (
+                    <span className="ml-2 text-gray-400">
+                      (Page {currentPage} of {totalPages})
+                    </span>
+                  )}
+                </>
+              ) : (
+                'No emails found'
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 px-3 rounded-full border-gray-200 hover:bg-gray-50 disabled:bg-gray-50 disabled:text-gray-300"
-                disabled
-              >
-                Previous
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 px-3 rounded-full border-gray-200 hover:bg-gray-50 disabled:bg-gray-50 disabled:text-gray-300"
-                disabled
-              >
-                Next
-              </Button>
-            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-4">
+                {/* Previous/Next Navigation */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 px-3 rounded-full border-gray-200 hover:bg-gray-50"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 px-3 rounded-full border-gray-200 hover:bg-gray-50"
+                  >
+                    Next
+                  </Button>
+                </div>
+
+                {/* Page Info & Quick Navigation */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-500">Page</span>
+                  <select
+                    value={currentPage}
+                    onChange={(e) => setCurrentPage(Number(e.target.value))}
+                    className="px-2 py-1 border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  >
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-gray-500">of {totalPages}</span>
+                </div>
+
+                {/* Quick Jump Options */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="px-2 py-1 text-xs text-gray-500 hover:text-pink-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    First
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="px-2 py-1 text-xs text-gray-500 hover:text-pink-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Last
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
