@@ -45,13 +45,16 @@ export function SignInForm() {
         throw error
       }
 
+      // Keep loading state true during redirect
       router.push("/email-generator")
       router.refresh()
+      
+      // Don't clear loading state - let the redirect complete
+      // Loading state will be cleared when component unmounts or if there's an error
     } catch (error: any) {
       console.error('Error signing in:', error)
       setError(error.message || 'Failed to sign in')
-    } finally {
-      setIsLoading(false)
+      setIsLoading(false) // Only clear loading on error
     }
   }
 

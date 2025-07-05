@@ -18,6 +18,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -33,6 +35,12 @@ export function SignUpForm() {
     setError(null)
     setSuccess(null)
 
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Please enter both first and last name")
+      setIsLoading(false)
+      return
+    }
+
     if (!privacyConsent) {
       setError("Please agree to the Privacy Policy to continue")
       setIsLoading(false)
@@ -46,6 +54,9 @@ export function SignUpForm() {
     }
 
     try {
+      // Create display name from first and last name
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      
       // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -53,7 +64,11 @@ export function SignUpForm() {
         options: {
           emailRedirectTo: `${location.origin}/auth/callback`,
           data: {
-            // Store these in the user metadata in case we need it later
+            // Store user details in metadata
+            full_name: fullName,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            display_name: fullName,
             privacy_accepted: privacyConsent,
             proper_use_accepted: properUseConsent
           }
@@ -129,6 +144,8 @@ export function SignUpForm() {
                 id="first-name" 
                 placeholder="John" 
                 required 
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 className="h-11 transition-all focus-visible:ring-pink-500"
                 suppressHydrationWarning
               />
@@ -139,6 +156,8 @@ export function SignUpForm() {
                 id="last-name" 
                 placeholder="Doe" 
                 required 
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 className="h-11 transition-all focus-visible:ring-pink-500"
                 suppressHydrationWarning
               />
