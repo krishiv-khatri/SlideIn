@@ -13,6 +13,7 @@ import {
   SidebarGroupLabel,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface NavItem {
   title: string
@@ -27,7 +28,15 @@ interface NavMainProps {
 
 export function NavMain({ items, className }: NavMainProps) {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, setOpenMobile } = useSidebar()
+  const isMobile = useIsMobile()
+  
+  const handleNavClick = () => {
+    // Close sidebar on mobile after navigation
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
   
   return (
     <SidebarGroup className={className}>
@@ -50,7 +59,7 @@ export function NavMain({ items, className }: NavMainProps) {
                   tooltip={item.title}
                   className="rounded-lg"
                 >
-                  <Link href={item.url}>
+                  <Link href={item.url} onClick={handleNavClick}>
                     <Icon className="h-4 w-4" />
                     <span>{item.title}</span>
                   </Link>

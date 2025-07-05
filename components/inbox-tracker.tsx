@@ -244,7 +244,7 @@ export function InboxTracker() {
   }
 
   return (
-    <div className="inbox-tracker-container w-full space-y-4 mx-auto" style={{ maxWidth: "1600px" }}>
+    <div className="inbox-tracker-container w-full space-y-4 mx-auto pb-8" style={{ maxWidth: "1600px" }}>
       {/* Header Section */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
@@ -253,23 +253,29 @@ export function InboxTracker() {
           <span className="text-pink-500 font-medium">Inbox Tracker</span>
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1 font-display">Inbox Tracker</h1>
-          <p className="text-gray-500">Monitor your email campaigns and engagement</p>
+          <h1 className="text-3xl md:text-3xl font-bold text-gray-900 mb-1 font-display">Inbox Tracker</h1>
+          <p className="text-gray-500 text-sm md:text-base">Monitor your email campaigns and engagement</p>
         </div>
       </div>
       
       {/* Toolbar with filters, search, and refresh */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 py-2">
-        <div className="min-w-60">
+      <div className="flex flex-col gap-4 py-2">
+        {/* Tabs Section - Full width on mobile */}
+        <div className="w-full">
           <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
             <TabsList className="bg-gray-100 p-1 rounded-full w-full">
-              <TabsTrigger value="all" className="flex-1 rounded-full px-5 font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm">All</TabsTrigger>
-              <TabsTrigger value="opened" className="flex-1 rounded-full px-5 font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm">Opened</TabsTrigger>
-              <TabsTrigger value="not-opened" className="flex-1 rounded-full px-5 font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm">Not Opened</TabsTrigger>
+              <TabsTrigger value="all" className="flex-1 rounded-full px-2 sm:px-5 font-medium text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">All</TabsTrigger>
+              <TabsTrigger value="opened" className="flex-1 rounded-full px-2 sm:px-5 font-medium text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Opened</TabsTrigger>
+              <TabsTrigger value="not-opened" className="flex-1 rounded-full px-1 sm:px-5 font-medium text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <span className="hidden sm:inline">Not Opened</span>
+                <span className="sm:hidden">Unread</span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        
+        {/* Search and Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center sm:justify-end">
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
@@ -315,9 +321,9 @@ export function InboxTracker() {
                     <TableHead className="py-4 px-6 font-medium text-gray-500">To</TableHead>
                     <TableHead className="py-4 px-6 font-medium text-gray-500">Subject</TableHead>
                     <TableHead className="py-4 px-6 font-medium text-gray-500">Status</TableHead>
-                    <TableHead className="py-4 px-6 font-medium text-gray-500 text-center">Opens</TableHead>
-                    <TableHead className="py-4 px-6 font-medium text-gray-500">Last Opened</TableHead>
-                    <TableHead className="py-4 px-6 font-medium text-gray-500">Sent</TableHead>
+                    <TableHead className="py-4 px-6 font-medium text-gray-500 text-center mobile-hide">Opens</TableHead>
+                    <TableHead className="py-4 px-6 font-medium text-gray-500 mobile-hide">Last Opened</TableHead>
+                    <TableHead className="py-4 px-6 font-medium text-gray-500 mobile-hide">Sent</TableHead>
                     <TableHead className="py-4 px-6 font-medium text-gray-500 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -326,7 +332,13 @@ export function InboxTracker() {
                     currentEmails.map((email) => (
                       <TableRow key={email.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                         <TableCell className="py-4 px-6 font-medium text-gray-900">{email.recipient_email}</TableCell>
-                        <TableCell className="py-4 px-6 text-gray-700 max-w-xs truncate">{email.subject}</TableCell>
+                        <TableCell className="py-4 px-6 text-gray-700 max-w-xs truncate">
+                          {email.subject}
+                          {/* Show opens count on mobile as a badge next to subject */}
+                          <span className="md:hidden ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full text-xs font-semibold bg-pink-50 text-pink-600">
+                            {getLegitimateOpensCount(email)}
+                          </span>
+                        </TableCell>
                         <TableCell className="py-4 px-6">
                           <Badge 
                             variant="outline" 
@@ -340,17 +352,17 @@ export function InboxTracker() {
                             {statusMap[getEffectiveStatus(email)]?.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-4 px-6 text-center">
+                        <TableCell className="py-4 px-6 text-center mobile-hide">
                           <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-semibold ${
                             getLegitimateOpensCount(email) > 0 ? "bg-pink-50 text-pink-600" : "bg-gray-50 text-gray-500"
                           }`}>
                             {getLegitimateOpensCount(email)}
                           </span>
                         </TableCell>
-                        <TableCell className="py-4 px-6 text-gray-500 text-sm">
+                        <TableCell className="py-4 px-6 text-gray-500 text-sm mobile-hide">
                           {hasLegitimateOpens(email) ? formatSentDate(email.last_opened!) : 'Not opened'}
                         </TableCell>
-                        <TableCell className="py-4 px-6 text-gray-500 text-sm">{formatSentDate(email.sent_at)}</TableCell>
+                        <TableCell className="py-4 px-6 text-gray-500 text-sm mobile-hide">{formatSentDate(email.sent_at)}</TableCell>
                         <TableCell className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <span 
@@ -412,7 +424,7 @@ export function InboxTracker() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7}>
+                      <TableCell colSpan={7} className="md:col-span-7">
                         <div className="flex flex-col items-center justify-center py-20 text-center">
                           <div className="bg-gray-50 p-4 rounded-full mb-4">
                             <AlertCircle className="h-8 w-8 text-gray-400" />

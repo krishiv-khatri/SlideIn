@@ -885,15 +885,13 @@ export function EmailGenerator() {
                       {/* Clean indicators */}
                       <div className="flex justify-between text-xs text-gray-400 mt-1">
                         <span>Professional</span>
-                        <span>Personal</span>
-                      </div>
-                      <div className="text-center -mt-0.5">
                         <span className="text-xs text-gray-500">
                           {warmth[0] <= 25 ? "Very Professional" : 
                            warmth[0] <= 50 ? "Balanced" : 
                            warmth[0] <= 75 ? "Friendly" : 
                            "Very Personal"}
                         </span>
+                        <span>Personal</span>
                       </div>
                     </div>
                   </div>

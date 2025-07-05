@@ -13,6 +13,7 @@ import {
   SidebarGroupLabel,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface NavItem {
   title: string
@@ -28,7 +29,18 @@ interface NavSecondaryProps {
 
 export function NavSecondary({ items, className }: NavSecondaryProps) {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, setOpenMobile } = useSidebar()
+  const isMobile = useIsMobile()
+  
+  const handleNavClick = (item: NavItem) => {
+    // Don't close sidebar if it's a coming soon item
+    if (item.comingSoon) return
+    
+    // Close sidebar on mobile after navigation
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
   
   return (
     <SidebarGroup className={className}>
@@ -49,7 +61,13 @@ export function NavSecondary({ items, className }: NavSecondaryProps) {
                 >
                   <Link 
                     href={item.comingSoon ? "#" : item.url}
-                    onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
+                    onClick={(e) => {
+                      if (item.comingSoon) {
+                        e.preventDefault()
+                      } else {
+                        handleNavClick(item)
+                      }
+                    }}
                     className={item.comingSoon ? "cursor-default opacity-70" : ""}
                   >
                     <Icon className="h-4 w-4" />

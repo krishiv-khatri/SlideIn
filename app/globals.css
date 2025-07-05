@@ -112,13 +112,62 @@
   }
 }
 
-/* Sidebar states */
-body[data-sidebar-state="collapsed"] main {
-  margin-left: var(--sidebar-width-collapsed);
+/* Sidebar states - Desktop only */
+@media (min-width: 768px) {
+  body[data-sidebar-state="collapsed"] main {
+    margin-left: var(--sidebar-width-collapsed);
+  }
+
+  body[data-sidebar-state="expanded"] main {
+    margin-left: var(--sidebar-width);
+  }
+
+  /* Content area positioning - Desktop only */
+  .content-area {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100vw - var(--sidebar-width)) !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Apply sidebar state transitions after load - Desktop only */
+  [data-sidebar-state="collapsed"] .content-area {
+    margin-left: var(--sidebar-width-collapsed) !important;
+    width: calc(100vw - var(--sidebar-width-collapsed)) !important;
+    transition: all 0.3s ease;
+  }
+
+  [data-sidebar-state="expanded"] .content-area {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100vw - var(--sidebar-width)) !important;
+    transition: all 0.3s ease;
+  }
 }
 
-body[data-sidebar-state="expanded"] main {
-  margin-left: var(--sidebar-width);
+/* Mobile layout - Sidebar as overlay */
+@media (max-width: 767px) {
+  .content-area {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* Ensure content takes full width on mobile regardless of sidebar state */
+  [data-sidebar-state="collapsed"] .content-area,
+  [data-sidebar-state="expanded"] .content-area {
+    margin-left: 0 !important;
+    width: 100vw !important;
+  }
+
+  /* Add padding to avoid overlap with mobile menu button */
+  .content-area {
+    padding-top: 4rem;
+  }
 }
 
 /* For smooth transitions */
@@ -150,28 +199,6 @@ body[data-sidebar-state="collapsed"] [data-sidebar="menu-button"] {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
-}
-
-/* Content area positioning - force consistent positioning from initial load */
-.content-area {
-  margin-left: var(--sidebar-width) !important;
-  width: calc(100vw - var(--sidebar-width)) !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Then apply sidebar state transitions after load */
-[data-sidebar-state="collapsed"] .content-area {
-  margin-left: var(--sidebar-width-collapsed) !important;
-  width: calc(100vw - var(--sidebar-width-collapsed)) !important;
-  transition: all 0.3s ease;
-}
-
-[data-sidebar-state="expanded"] .content-area {
-  margin-left: var(--sidebar-width) !important;
-  width: calc(100vw - var(--sidebar-width)) !important;
-  transition: all 0.3s ease;
 }
 
 /* Ensure consistent centering for all container widths */
@@ -260,10 +287,125 @@ body[data-sidebar-state="collapsed"] [data-sidebar="menu-button"] {
     width: 100%;
   }
 
-  /* Reset centering on small screens */
-  [data-sidebar-state="collapsed"] .email-generator-container,
-  [data-sidebar-state="collapsed"] .inbox-tracker-container {
+  /* Ensure mobile containers take full width */
+  .email-generator-container,
+  .inbox-tracker-container {
+    margin-left: 0 !important;
+    width: 100% !important;
     transform: translateX(0);
+    padding: 1rem;
+  }
+
+  /* Mobile content area padding adjustments */
+  .content-area {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Ensure tables are responsive on mobile */
+  .inbox-tracker-container table {
+    font-size: 0.75rem;
+  }
+  
+  .inbox-tracker-container th,
+  .inbox-tracker-container td {
+    padding: 0.5rem !important;
+  }
+
+  /* Make inbox tracker more compact on mobile */
+  .inbox-tracker-container {
+    padding: 0.5rem !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+
+  /* Hide less important columns on mobile */
+  .inbox-tracker-container .mobile-hide {
+    display: none !important;
+  }
+
+  /* Make the table scroll horizontally on mobile */
+  .inbox-tracker-container .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Adjust header spacing on mobile */
+  .inbox-tracker-container .mb-6 {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Adjust toolbar spacing on mobile */
+  .inbox-tracker-container .py-2 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Make cards more compact on mobile */
+  .inbox-tracker-container .card {
+    border-radius: 0.5rem !important;
+  }
+
+  /* Simplify header on mobile */
+  .inbox-tracker-container h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Compact tabs on mobile */
+  .inbox-tracker-container .tabs-list {
+    padding: 0.25rem !important;
+  }
+
+  /* Ensure tabs fit properly on mobile */
+  .inbox-tracker-container [role="tablist"] {
+    min-height: 2rem !important;
+    padding: 0.125rem !important;
+  }
+
+  /* Responsive tab triggers */
+  .inbox-tracker-container [role="tab"] {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+    min-height: 1.5rem !important;
+    white-space: nowrap;
+  }
+
+  /* Make tab text more compact on very small screens */
+  @media (max-width: 320px) {
+    .inbox-tracker-container [role="tab"] {
+      padding: 0.25rem 0.125rem !important;
+      font-size: 0.625rem !important;
+    }
+  }
+
+  /* Extra compact for phones in portrait */
+  @media (max-width: 375px) {
+    .inbox-tracker-container [role="tablist"] {
+      padding: 0.0625rem !important;
+    }
+    
+    .inbox-tracker-container [role="tab"] {
+      padding: 0.1875rem 0.375rem !important;
+      font-size: 0.6875rem !important;
+    }
+  }
+
+  /* Compact search and buttons on mobile */
+  .inbox-tracker-container .h-10 {
+    height: 2rem !important;
+  }
+
+  /* Reduce padding in table cells for mobile */
+  .inbox-tracker-container tbody td {
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  .inbox-tracker-container thead th {
+    padding: 0.75rem 0.5rem !important;
   }
 }
 

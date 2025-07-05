@@ -12,10 +12,12 @@ function MainContentWithSidebar({ children }: { children: ReactNode }) {
   
   return (
     <main 
-      className="flex-1 overflow-auto transition-all duration-300 content-area flex flex-col items-center"
+      className="flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300 content-area flex flex-col items-center min-h-0"
       data-sidebar-state={state}
     >
-      {children}
+      <div className="w-full max-w-full flex-1">
+        {children}
+      </div>
     </main>
   )
 }
@@ -27,7 +29,7 @@ interface LayoutWrapperProps {
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex h-screen w-full">
         <MobileSidebarButton />
         <AppSidebar />
         <MainContentWithSidebar>{children}</MainContentWithSidebar>
