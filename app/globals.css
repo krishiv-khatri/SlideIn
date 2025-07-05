@@ -225,7 +225,6 @@ body[data-sidebar-state="collapsed"] [data-sidebar="menu-button"] {
 [data-sidebar-state="expanded"] .inbox-tracker-container {
   width: 100%;
   margin: 0 auto;
-  padding: 0;
   transition: all 0.3s ease;
 }
 
@@ -314,14 +313,12 @@ body[data-sidebar-state="collapsed"] [data-sidebar="menu-button"] {
     padding: 0.5rem !important;
   }
 
-  /* Make inbox tracker more compact on mobile */
+  /* Make inbox tracker more compact on mobile only */
   .inbox-tracker-container {
     padding: 0.5rem !important;
-    overflow-y: visible !important;
-    max-height: none !important;
   }
 
-  /* Hide less important columns on mobile */
+  /* Hide less important columns on mobile only */
   .inbox-tracker-container .mobile-hide {
     display: none !important;
   }
@@ -354,24 +351,27 @@ body[data-sidebar-state="collapsed"] [data-sidebar="menu-button"] {
     margin-bottom: 0.5rem !important;
   }
 
-  /* Compact tabs on mobile */
-  .inbox-tracker-container .tabs-list {
-    padding: 0.25rem !important;
-  }
+  /* Mobile-only tab styling */
+  @media (max-width: 767px) {
+    /* Compact tabs on mobile only */
+    .inbox-tracker-container .tabs-list {
+      padding: 0.25rem !important;
+    }
 
-  /* Ensure tabs fit properly on mobile */
-  .inbox-tracker-container [role="tablist"] {
-    min-height: 2rem !important;
-    padding: 0.125rem !important;
-  }
+    /* Ensure tabs fit properly on mobile only */
+    .inbox-tracker-container [role="tablist"] {
+      min-height: 2rem !important;
+      padding: 0.125rem !important;
+    }
 
-  /* Responsive tab triggers */
-  .inbox-tracker-container [role="tab"] {
-    padding: 0.25rem 0.5rem !important;
-    font-size: 0.75rem !important;
-    line-height: 1rem !important;
-    min-height: 1.5rem !important;
-    white-space: nowrap;
+    /* Responsive tab triggers for mobile only */
+    .inbox-tracker-container [role="tab"] {
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.75rem !important;
+      line-height: 1rem !important;
+      min-height: 1.5rem !important;
+      white-space: nowrap;
+    }
   }
 
   /* Make tab text more compact on very small screens */

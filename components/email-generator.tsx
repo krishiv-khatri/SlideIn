@@ -883,7 +883,7 @@ export function EmailGenerator() {
                         className="relative"
                       />
                       {/* Clean indicators */}
-                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <div className="flex justify-between text-xs text-gray-400 mt-3">
                         <span>Professional</span>
                         <span className="text-xs text-gray-500">
                           {warmth[0] <= 25 ? "Very Professional" : 

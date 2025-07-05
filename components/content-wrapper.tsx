@@ -23,6 +23,12 @@ export function ContentWrapper({ children, className = "" }: ContentWrapperProps
     containerClass = "inbox-tracker-container"
   }
   
+  // Add padding for inbox and analytics pages to match the spacing
+  let paddingClass = ""
+  if (pathname?.includes("inbox") || pathname?.includes("analytics")) {
+    paddingClass = "py-8"
+  }
+  
   // Determine max-width based on route and mobile state
   let maxWidthClass = "max-w-4xl"
   if (pathname?.includes("email-generator")) {
@@ -39,6 +45,7 @@ export function ContentWrapper({ children, className = "" }: ContentWrapperProps
       className={`
         w-full flex flex-col items-center transition-all duration-300 
         ${containerClass} 
+        ${paddingClass}
         ${isMobile ? 'px-0' : 'px-4'}
         ${className}
       `}
