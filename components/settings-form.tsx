@@ -352,11 +352,29 @@ export function SettingsForm() {
               <TabsTrigger value="account" className="rounded-lg py-2.5 text-sm font-medium">
                 Email Accounts
               </TabsTrigger>
-              <TabsTrigger value="preferences" className="rounded-lg py-2.5 text-sm font-medium">
-                Preferences
+              <TabsTrigger 
+                value="preferences" 
+                className="rounded-lg py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed" 
+                disabled
+              >
+                <span className="flex items-center gap-1.5">
+                  Preferences
+                  <span className="text-[10px] text-muted-foreground/60 font-normal">
+                    (soon)
+                  </span>
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="rounded-lg py-2.5 text-sm font-medium">
-                Notifications
+              <TabsTrigger 
+                value="notifications" 
+                className="rounded-lg py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed"
+                disabled
+              >
+                <span className="flex items-center gap-1.5">
+                  Notifications
+                  <span className="text-[10px] text-muted-foreground/60 font-normal">
+                    (soon)
+                  </span>
+                </span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -566,7 +584,17 @@ export function SettingsForm() {
 
         <TabsContent value="preferences" className="w-full h-[calc(100vh-120px)] overflow-y-auto">
           <div className="w-full max-w-3xl mx-auto px-4 py-6">
-            <Card className="shadow-sm overflow-hidden border rounded-xl w-full">
+            <Card className="shadow-sm overflow-hidden border rounded-xl w-full relative">
+              {/* Disabled overlay for beta */}
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                <div className="text-center space-y-2">
+                  <div className="text-2xl">🚀</div>
+                  <h3 className="text-lg font-semibold text-gray-700">Coming Soon</h3>
+                  <p className="text-sm text-gray-500 max-w-xs">
+                    Email preferences will be available in the next release. Stay tuned!
+                  </p>
+                </div>
+              </div>
               <CardHeader className="bg-gradient-to-r from-slate-50 to-white pb-6 border-b">
                 <div className="flex justify-between items-center">
                   <div>
@@ -660,7 +688,17 @@ export function SettingsForm() {
 
         <TabsContent value="notifications" className="w-full h-[calc(100vh-120px)] overflow-y-auto">
           <div className="w-full max-w-3xl mx-auto px-4 py-6">
-            <Card className="shadow-sm overflow-hidden border rounded-xl w-full">
+            <Card className="shadow-sm overflow-hidden border rounded-xl w-full relative">
+              {/* Disabled overlay for beta */}
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                <div className="text-center space-y-2">
+                  <div className="text-2xl">🔔</div>
+                  <h3 className="text-lg font-semibold text-gray-700">Coming Soon</h3>
+                  <p className="text-sm text-gray-500 max-w-xs">
+                    Notification settings will be available in the next release. Stay tuned!
+                  </p>
+                </div>
+              </div>
               <CardHeader className="bg-gradient-to-r from-slate-50 to-white pb-6 border-b">
                 <div className="flex justify-between items-center">
                   <div>
