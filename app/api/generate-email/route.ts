@@ -880,7 +880,6 @@ export async function POST(request: Request) {
       Email writing rules:
       - Adapt your style and format to the context (academic, job application, business, etc.)
       - You must *mention exact and real* details that show clear research.
-      - Absolutely **no placeholders** like [insert company project].
       - The email must *feel naturally written by a human* and be short and concise, not like a template.
       - Match the requested tone ("${tone}") with the warmth level (${warmthLevel}/100).
       - WARMTH LEVEL GUIDANCE:
