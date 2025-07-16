@@ -396,7 +396,7 @@ async function extractContactName($: cheerio.CheerioAPI, cleanedContent: string,
   
   try {
     const result = await ai.models.generateContent({
-      model: 'gemini-pro',
+      model: 'gemini-2.5-flash',
       contents: prompt
     });
     
@@ -430,6 +430,91 @@ function getDefaultNameByContext(context: 'academic' | 'job' | 'company' | 'gene
       return 'Team';
     default:
       return 'Team';
+  }
+}
+
+// Function to find AI-suggested email addresses
+async function findAISuggestedEmails(content: string, url?: string, recipientName?: string): Promise<string[]> {
+  try {
+    // Extract key organizations, people, or departments from the content
+    const context = detectUrlContext(url, content);
+    const organizationPrompt = `
+      Based on the following webpage content, identify the key organization, department, lab, or person that would be most relevant for contact:
+
+      URL: ${url || 'Not provided'}
+      Content: ${content.substring(0, 2000)}
+
+      Extract:
+      1. Organization name (university, company, lab, etc.)
+      2. Department or division name
+      3. Key person's name (if mentioned)
+      4. Lab or research group name (if applicable)
+
+      Return only the most relevant 1-2 entities that someone would likely search for to find contact information.
+      Format as a simple list, one item per line.
+    `;
+
+    const orgResponse = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: organizationPrompt,
+    });
+
+    const organizations = orgResponse.text?.trim() || '';
+    console.log('Extracted organizations:', organizations);
+
+    if (!organizations) {
+      return [];
+    }
+
+    // Now search for email addresses based on the extracted entities
+    const emailSearchPrompt = `
+      Based on the following organization or person information, SEARCH THE WEB for email addresses that could be used to reach them. 
+      
+      Context: ${context}
+      Organization/Person Info: ${organizations}
+      ${recipientName ? `Recipient Name: ${recipientName}` : ''}
+      
+      ONLY RETURN THE EMAIL ADRESSES IF THEY ARE REAL AND VALID.
+      
+      Return the result as a valid JSON array of email strings, and leave it empty if no valid email addresses are found:
+      ["email1@domain.com", "email2@domain.com", "email3@domain.com"]
+    `;
+
+    const emailResponse = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: emailSearchPrompt,
+    });
+
+    const emailText = emailResponse.text?.trim() || '';
+    console.log('AI email suggestions raw:', emailText);
+
+    // Clean and parse the JSON response
+    const cleanedEmailText = emailText.replace(/```json\n?|\n?```/g, '').trim();
+    
+    try {
+      const suggestedEmails = JSON.parse(cleanedEmailText);
+      if (Array.isArray(suggestedEmails)) {
+        // Validate emails and filter out invalid ones
+        const validEmails = suggestedEmails.filter((email: string) => 
+          typeof email === 'string' && isValidEmail(email)
+        );
+        console.log('AI suggested emails:', validEmails);
+        return validEmails;
+      }
+    } catch (parseError) {
+      console.error('Error parsing AI email suggestions:', parseError);
+      // Try to extract emails from the response text using regex as fallback
+      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+      const extractedEmails = emailText.match(emailRegex) || [];
+      const validEmails = extractedEmails.filter(email => isValidEmail(email));
+      console.log('Fallback extracted emails:', validEmails);
+      return validEmails;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Error finding AI-suggested emails:', error);
+    return [];
   }
 }
 
@@ -723,9 +808,14 @@ export async function POST(request: Request) {
           );
         }
 
-        // Extract contact name if not provided
+        // Extract contact name as context (optional, not enforced)
         if (!recipientName) {
-          recipientName = await extractContactName($, cleanedContent, url);
+          try {
+            recipientName = await extractContactName($, cleanedContent, url);
+          } catch (error) {
+            console.log('Could not extract recipient name, AI will handle addressing naturally');
+            recipientName = undefined;
+          }
         }
 
         // Extract email addresses
@@ -769,7 +859,7 @@ export async function POST(request: Request) {
                              "very personal and warm";
     
     const prompt = `
-      Generate a highly personalized, natural cold email using the following information:
+      Generate a short, catchy, highly personalized, human and natural cold email using the following information:
 
       - URL: ${url}
       - URL Content Preview: ${truncatedContent}
@@ -777,8 +867,8 @@ export async function POST(request: Request) {
       - Tone: ${tone}
       - Warmth Level: ${warmthLevel}/100 (${warmthDescription})
       - Sender's Name: ${userName || 'Me'}
-      - Recipient's Name: ${recipientName || '[Name]'}
       - Context: ${detectUrlContext(url, truncatedContent)}
+      ${recipientName ? `- Suggested Recipient: ${recipientName} (use as context, but address naturally)` : ''}
 
       Before writing:
       1. Deeply analyze the provided URL content preview.
@@ -791,16 +881,20 @@ export async function POST(request: Request) {
       - Adapt your style and format to the context (academic, job application, business, etc.)
       - You must *mention exact and real* details that show clear research.
       - Absolutely **no placeholders** like [insert company project].
-      - The email must *feel naturally written by a human*, not like a template.
+      - The email must *feel naturally written by a human* and be short and concise, not like a template.
       - Match the requested tone ("${tone}") with the warmth level (${warmthLevel}/100).
       - WARMTH LEVEL GUIDANCE:
         * 1-25: Use very formal language, minimal personal touches, professional distance
         * 26-50: Professional with some warmth, appropriate personal elements
         * 51-75: Conversational tone, friendly approach, personal connections
         * 76-100: Highly personalized, warm language, personal anecdotes when appropriate
+      - Address the recipient naturally based on context - if no specific name is known, use appropriate greetings like:
+        * Academic: "Dear Professor," "Hello," or "Hi there,"
+        * Business: "Dear Team," "Hello," or "Hi,"
+        * Job: "Dear Hiring Manager," "Hello," or "Hi,"
+        * Generic: "Hello," "Hi there," or "Dear Team,"
       - Clearly state the sender's goal and end with a friendly, low-pressure call to action.
       - Keep the body under 150 words unless a slightly longer message fits the tone.
-      - Address the recipient appropriately based on their context (professor for academic, hiring manager for job, etc.)
       - CRITICAL: The sign-off MUST include the EXACT name "${userName || 'Me'}" and not generic terms.
       - NEVER use "User" or any generic placeholder for the sender's name.
       - The email signature must be in this exact format: 
@@ -833,7 +927,7 @@ export async function POST(request: Request) {
       // Generate the email using Gemini
       console.log('Sending request to Gemini API...');
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
       });
 
@@ -858,12 +952,21 @@ export async function POST(request: Request) {
         // Ensure the email body has the correct signature with the user's name
         const body = ensureCorrectSignature(emailData.body, userName || 'Me');
         
+        // Get AI-suggested emails after generating the email
+        console.log('Finding AI-suggested emails...');
+        const aiSuggestedEmails = await findAISuggestedEmails(truncatedContent, url, recipientName);
+        
+        // Combine all emails (page-extracted + AI-suggested) and remove duplicates
+        const allEmails = [...new Set([...extractedEmails, ...aiSuggestedEmails])];
+        
         return NextResponse.json({
           ...emailData,
           body,
           recipientName: recipientName || getDefaultNameByContext(detectUrlContext(url, truncatedContent)),
-          recipientEmail: recipientEmail || extractedEmails[0] || '',
+          recipientEmail: recipientEmail || allEmails[0] || '',
           extractedEmails: extractedEmails,
+          aiSuggestedEmails: aiSuggestedEmails,
+          allEmails: allEmails,
           userName: userName || ''
         });
       } catch (parseError) {
@@ -877,12 +980,21 @@ export async function POST(request: Request) {
           // Ensure the email body has the correct signature with the user's name
           const body = ensureCorrectSignature(bodyMatch[1], userName || 'Me');
           
+          // Get AI-suggested emails after generating the email
+          console.log('Finding AI-suggested emails (fallback path)...');
+          const aiSuggestedEmails = await findAISuggestedEmails(truncatedContent, url, recipientName);
+          
+          // Combine all emails (page-extracted + AI-suggested) and remove duplicates
+          const allEmails = [...new Set([...extractedEmails, ...aiSuggestedEmails])];
+          
           return NextResponse.json({
             subject: subjectMatch[1],
             body,
             recipientName: recipientName || getDefaultNameByContext(detectUrlContext(url, truncatedContent)),
-            recipientEmail: recipientEmail || extractedEmails[0] || '',
+            recipientEmail: recipientEmail || allEmails[0] || '',
             extractedEmails: extractedEmails,
+            aiSuggestedEmails: aiSuggestedEmails,
+            allEmails: allEmails,
             userName: userName || ''
           });
         } else {

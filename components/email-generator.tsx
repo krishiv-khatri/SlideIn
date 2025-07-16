@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Send, Sparkles, Mail, Check, X, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Loader2, Send, Sparkles, Mail, Check, X, Plus, ArrowLeft, Bold, Italic, Link, Paperclip, Pencil, Highlighter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -176,6 +178,11 @@ export function EmailGenerator() {
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [trackingEnabled, setTrackingEnabled] = useState(true)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [showLinkDialog, setShowLinkDialog] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const [linkText, setLinkText] = useState('')
+  const [linkSelection, setLinkSelection] = useState<{range: Range, selectedText: string} | null>(null)
+  const router = useRouter()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -330,6 +337,43 @@ export function EmailGenerator() {
     };
   }, [supabase]);
 
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (generated) {
+        event.preventDefault();
+        setGenerated(false);
+      }
+    };
+
+    if (generated) {
+      // Add a history state when email is generated
+      window.history.pushState({ generated: true }, '', window.location.href);
+    }
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [generated]);
+
+  // Update rich editor content when emailBody changes externally (like when email is first generated)
+  useEffect(() => {
+    const editor = document.getElementById('rich-editor') as HTMLDivElement;
+    if (editor && generated) {
+      // Only update if the content is significantly different (to avoid cursor issues)
+      const currentContent = editor.innerHTML;
+      const newContent = emailBody.replace(/\n/g, '<br>');
+      
+      if (currentContent !== newContent && currentContent !== emailBody) {
+        editor.innerHTML = newContent;
+        // Apply placeholder highlighting after content is set
+        setTimeout(() => applyPlaceholderHighlighting(), 0);
+      }
+    }
+  }, [emailBody, generated]);
+
   // Added debug button function to manually refresh accounts
   const handleDebugRefresh = async () => {
     console.log('DEBUG: Manual refresh triggered');
@@ -418,9 +462,9 @@ export function EmailGenerator() {
       setSubject(data.subject);
       setEmailBody(data.body);
       
-      // Handle extracted emails
-      if (data.extractedEmails && data.extractedEmails.length > 0) {
-        setExtractedEmails(data.extractedEmails);
+      // Handle extracted emails - use allEmails which includes both webpage and AI-suggested emails
+      if (data.allEmails && data.allEmails.length > 0) {
+        setExtractedEmails(data.allEmails);
         
         // Auto-set the first email if none is already set
         if (!recipientEmail && data.recipientEmail) {
@@ -428,7 +472,7 @@ export function EmailGenerator() {
         }
         
         // Show the dropdown if we have multiple emails
-        if (data.extractedEmails.length > 1) {
+        if (data.allEmails.length > 1) {
           setShowEmailDropdown(true);
         }
       }
@@ -470,10 +514,24 @@ export function EmailGenerator() {
         // Convert files to base64 if any are attached
         const attachments = attachedFiles.length > 0 ? await convertFilesToBase64(attachedFiles) : [];
         
+        // Prepare email body for sending - remove placeholder highlighting and ensure proper HTML
+        let finalEmailBody = emailBody;
+        
+        // Remove placeholder highlighting if present
+        finalEmailBody = finalEmailBody.replace(
+          /<span class="bg-yellow-300 text-yellow-900 px-1 rounded font-medium">(.*?)<\/span>/g,
+          '$1'
+        );
+        
+        // Ensure newlines are converted to HTML breaks if not already HTML
+        if (!finalEmailBody.includes('<br>') && !finalEmailBody.includes('<p>')) {
+          finalEmailBody = finalEmailBody.replace(/\n/g, '<br>');
+        }
+        
         const requestBody = {
           to: recipientEmail,
           subject,
-          html: emailBody.replace(/\n/g, '<br>'),
+          html: finalEmailBody,
           gmailTokens,
           trackingEnabled,
           userId,
@@ -562,7 +620,44 @@ export function EmailGenerator() {
     window.location.href = '/api/gmail-oauth/start';
   };
 
-  // Handle file selection
+  // Handle link dialog submission
+  const handleLinkSubmit = () => {
+    if (!linkSelection || !linkUrl) return;
+    
+    const { range, selectedText } = linkSelection;
+    const formattedElement = document.createElement('a');
+    formattedElement.setAttribute('href', linkUrl);
+    formattedElement.setAttribute('target', '_blank');
+    formattedElement.className = 'text-blue-600 underline hover:text-blue-800';
+    formattedElement.textContent = linkText || selectedText || 'Link text';
+    
+    if (selectedText) {
+      range.deleteContents();
+    }
+    range.insertNode(formattedElement);
+    
+    // Update the emailBody state
+    const editor = document.getElementById('rich-editor') as HTMLDivElement;
+    if (editor) {
+      setEmailBody(editor.innerHTML);
+    }
+    
+    // Position cursor after the inserted element
+    const newRange = document.createRange();
+    newRange.setStartAfter(formattedElement);
+    newRange.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(newRange);
+    
+    // Close dialog and reset states
+    setShowLinkDialog(false);
+    setLinkUrl('https://');
+    setLinkText('');
+    setLinkSelection(null);
+  };
+
+  // Handle file selection from toolbar
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(event.target.files || []);
     
@@ -595,17 +690,150 @@ export function EmailGenerator() {
     setAttachedFiles(uniqueFiles);
     
     if (newFiles.length > 0) {
-      toast.success(`${newFiles.length} file(s) attached successfully.`);
+      toast.success(`${newFiles.length} file${newFiles.length > 1 ? 's' : ''} attached successfully`);
     }
     
     // Clear the input so the same file can be selected again if needed
     event.target.value = '';
   };
 
-  // Remove a specific file
+  // Remove file from attachments
   const removeFile = (index: number) => {
-    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+    setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
   };
+
+  // Text formatting functions for rich text editor
+  const formatText = (type: 'bold' | 'italic' | 'link') => {
+    const editor = document.getElementById('rich-editor') as HTMLDivElement;
+    if (!editor) return;
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+    
+    let formattedElement: HTMLElement;
+    
+    switch (type) {
+      case 'bold':
+        formattedElement = document.createElement('strong');
+        formattedElement.textContent = selectedText || 'Bold text';
+        break;
+      case 'italic':
+        formattedElement = document.createElement('em');
+        formattedElement.textContent = selectedText || 'Italic text';
+        break;
+              case 'link':
+          // Store selection for later use in dialog
+          setLinkSelection({ range, selectedText });
+          setLinkText(selectedText || 'Link text');
+          setLinkUrl('https://');
+          setShowLinkDialog(true);
+          return; // Don't proceed with insertion here, wait for dialog
+    }
+    
+    if (selectedText) {
+      range.deleteContents();
+    }
+    range.insertNode(formattedElement);
+    
+    // Update the emailBody state with the HTML content
+    setEmailBody(editor.innerHTML);
+    
+    // Position cursor after the inserted element
+    const newRange = document.createRange();
+    newRange.setStartAfter(formattedElement);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+  };
+
+  // Handle content changes in rich editor
+  const handleRichEditorChange = () => {
+    const editor = document.getElementById('rich-editor') as HTMLDivElement;
+    if (editor) {
+      // Store the current HTML content directly
+      setEmailBody(editor.innerHTML);
+    }
+  };
+
+  // Apply placeholder highlighting directly to the editor
+  const applyPlaceholderHighlighting = () => {
+    const editor = document.getElementById('rich-editor') as HTMLDivElement;
+    if (!editor) return;
+
+    // Save current cursor position
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const cursorOffset = range ? range.startOffset : 0;
+    const cursorContainer = range ? range.startContainer : null;
+
+    // Apply highlighting to placeholders
+    const walker = document.createTreeWalker(
+      editor,
+      NodeFilter.SHOW_TEXT
+    );
+
+    const textNodes: Text[] = [];
+    let node;
+    while (node = walker.nextNode()) {
+      textNodes.push(node as Text);
+    }
+
+    textNodes.forEach((textNode) => {
+      const text = textNode.textContent || '';
+      const placeholderRegex = /(\[.*?\]|\{.*?\})/g;
+      
+      if (placeholderRegex.test(text)) {
+        const parent = textNode.parentNode;
+        if (parent && !(parent as Element).classList?.contains('bg-yellow-300')) {
+          const fragment = document.createDocumentFragment();
+          let lastIndex = 0;
+          let match;
+          
+          placeholderRegex.lastIndex = 0; // Reset regex
+          while ((match = placeholderRegex.exec(text)) !== null) {
+            // Add text before placeholder
+            if (match.index > lastIndex) {
+              fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            }
+            
+            // Add highlighted placeholder
+            const span = document.createElement('span');
+            span.className = 'bg-yellow-300 text-yellow-900 px-1 rounded font-medium';
+            span.textContent = match[0];
+            fragment.appendChild(span);
+            
+            lastIndex = match.index + match[0].length;
+          }
+          
+          // Add remaining text
+          if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+          }
+          
+          parent.replaceChild(fragment, textNode);
+        }
+      }
+    });
+
+    // Restore cursor position
+    if (range && cursorContainer) {
+      try {
+        const newRange = document.createRange();
+        newRange.setStart(cursorContainer, cursorOffset);
+        newRange.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(newRange);
+      } catch (e) {
+        // If cursor restoration fails, just focus the editor
+        editor.focus();
+      }
+    }
+  };
+
+
 
   // Convert files to base64 for sending
   const convertFilesToBase64 = async (files: File[]): Promise<any[]> => {
@@ -942,87 +1170,121 @@ export function EmailGenerator() {
           <div className="w-full grid gap-3 md:grid-cols-[minmax(500px,1fr),minmax(400px,1fr)] transition-all duration-300 overflow-visible">
             <Card className="md:col-span-1 shadow-none border-none">
               <CardContent className="pt-6">
+                {/* Top back button */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setGenerated(false)}
+                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to form
+                  </Button>
+                </div>
                 <div className="space-y-4 max-h-none overflow-visible">
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
                     <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="body">Email Body</Label>
-                    <Textarea
-                      id="body"
-                      value={emailBody}
-                      onChange={(e) => setEmailBody(e.target.value)}
-                      className="min-h-[450px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="resume-upload" className="text-sm font-medium text-gray-700">Attach Files</Label>
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <input 
-                          id="resume-upload" 
-                          type="file" 
-                          multiple
-                          onChange={handleFileSelect}
-                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 cursor-pointer" 
-                          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.zip,.rar"
-                        />
-                        {attachedFiles.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById('resume-upload')?.click()}
-                            className="flex-shrink-0 text-xs px-3"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add More
-                          </Button>
-                        )}
-                      </div>
-                      {attachedFiles.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600">Attached files ({attachedFiles.length}):</p>
-                            {attachedFiles.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setAttachedFiles([])}
-                                className="text-red-500 hover:text-red-700 text-xs h-6"
-                              >
-                                Clear All
-                              </Button>
-                            )}
-                          </div>
-                          <div className="max-h-32 overflow-y-auto space-y-2 pr-2">
-                            {attachedFiles.map((file, index) => (
-                              <div key={`${file.name}-${index}`} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <span className="text-sm font-medium text-gray-700 truncate">{file.name}</span>
-                                  <span className="text-xs text-gray-500 flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeFile(index)}
-                                  className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-400">
-                        Support for common file types. Max 25MB per file. You can select multiple files at once or add them one by one.
-                      </p>
+                    <Label htmlFor="rich-editor">Email Body</Label>
+                    {/* Text formatting toolbar */}
+                    <div className="flex items-center gap-1 p-2 border rounded-md bg-gray-50">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => formatText('bold')}
+                        className="h-8 px-3 hover:bg-gray-200"
+                        title="Bold"
+                      >
+                        <Bold className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => formatText('italic')}
+                        className="h-8 px-3 hover:bg-gray-200"
+                        title="Italic"
+                      >
+                        <Italic className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => formatText('link')}
+                        className="h-8 px-3 hover:bg-gray-200"
+                        title="Add Link"
+                      >
+                        <Link className="h-4 w-4" />
+                      </Button>
+                      <div className="h-4 w-px bg-gray-300 mx-1" />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        className="h-8 px-3 hover:bg-gray-200"
+                        title="Attach Files"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                      <input
+                        id="file-upload"
+                        type="file"
+                        multiple
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.zip,.rar"
+                      />
+                      <div className="h-4 w-px bg-gray-300 mx-1" />
+                      <span className="text-xs text-gray-500">
+                        Select text and click to format
+                      </span>
                     </div>
+                    {/* Attached files display */}
+                    {attachedFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md border">
+                        {attachedFiles.map((file, index) => (
+                          <div key={`${file.name}-${index}`} className="flex items-center gap-1 bg-white px-2 py-1 rounded border text-sm">
+                            <span className="text-gray-700 truncate max-w-[150px]">{file.name}</span>
+                            <button
+                              onClick={() => removeFile(index)}
+                              className="text-red-500 hover:text-red-700 ml-1"
+                              title="Remove file"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Rich text editor */}
+                    <div
+                      id="rich-editor"
+                      contentEditable
+                      onInput={handleRichEditorChange}
+                      onFocus={() => setTimeout(() => applyPlaceholderHighlighting(), 100)}
+                      className="min-h-[450px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-pre-wrap overflow-auto"
+                      style={{
+                        fontFamily: 'inherit',
+                        fontSize: '14px',
+                        lineHeight: '1.5'
+                      }}
+                      suppressContentEditableWarning={true}
+                    />
+                    {/* Helper text for placeholders */}
+                    {emailBody.match(/\[.*?\]|\{.*?\}/) && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <Highlighter className="h-3 w-3" />
+                        Yellow highlighted placeholders should be replaced with personalized information
+                      </p>
+                    )}
                   </div>
+
                   <div className="flex justify-between">
                     <Button variant="outline" onClick={() => setGenerated(false)}>
                       Back
@@ -1122,7 +1384,7 @@ export function EmailGenerator() {
                       </div>
                       {extractedEmails.length > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
-                          {extractedEmails.length} email{extractedEmails.length !== 1 ? 's' : ''} found on webpage
+                          {extractedEmails.length} email{extractedEmails.length !== 1 ? 's' : ''} found
                         </p>
                       )}
                     </div>
@@ -1220,6 +1482,45 @@ export function EmailGenerator() {
           </div>
         )}
       </div>
+      
+      {/* Hyperlink Dialog */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Hyperlink</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="link-url">URL</Label>
+              <Input
+                id="link-url"
+                placeholder="https://example.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-text">Display Text</Label>
+              <Input
+                id="link-text"
+                placeholder="Link text"
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleLinkSubmit} disabled={!linkUrl.trim()}>
+              Add Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <style jsx global>{`
         .animate-fadein {
           animation: fadein 0.7s cubic-bezier(0.4,0,0.2,1);
@@ -1249,6 +1550,34 @@ export function EmailGenerator() {
         @keyframes blink {
           from, to { opacity: 1; }
           50% { opacity: 0; }
+        }
+        
+        /* Rich text editor styles */
+        #rich-editor {
+          outline: none;
+        }
+        #rich-editor:focus {
+          outline: none;
+        }
+        #rich-editor strong {
+          font-weight: bold;
+        }
+        #rich-editor em {
+          font-style: italic;
+        }
+        #rich-editor a {
+          color: #2563eb;
+          text-decoration: underline;
+        }
+        #rich-editor a:hover {
+          color: #1d4ed8;
+        }
+        #rich-editor .bg-yellow-300 {
+          background-color: #fde047;
+          color: #713f12;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-weight: 500;
         }
       `}</style>
     </div>

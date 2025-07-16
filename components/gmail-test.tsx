@@ -15,7 +15,7 @@ import {
   syncGmailTokensFromEmailAccounts
 } from '@/lib/supabase-storage';
 import { supabase } from '@/lib/supabase';
-import axios from 'axios';
+
 
 export function GmailTest() {
   const [to, setTo] = useState('');
@@ -94,22 +94,30 @@ export function GmailTest() {
       setIsSending(true);
       
       try {
-        const response = await axios.post('/api/send-email', {
-          to,
-          subject,
-          html: content,
-          gmailTokens
+        const response = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to,
+            subject,
+            html: content,
+            gmailTokens
+          }),
         });
         
-        if (response.data.success) {
+        const data = await response.json();
+        
+        if (data.success) {
           toast.success('Email sent successfully!');
         } else {
           // Check if token was refreshed
-          if (response.data.refreshedTokens) {
-            await updateGmailTokens(response.data.refreshedTokens);
+          if (data.refreshedTokens) {
+            await updateGmailTokens(data.refreshedTokens);
             toast.error('Token refreshed. Please try again.');
           } else {
-            toast.error(response.data.error || 'Failed to send email');
+            toast.error(data.error || 'Failed to send email');
           }
         }
       } catch (error) {

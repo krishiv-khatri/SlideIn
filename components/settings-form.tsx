@@ -358,7 +358,7 @@ export function SettingsForm() {
                 disabled
               >
                 <span className="flex items-center gap-1.5">
-                  Preferences
+                Preferences
                   <span className="text-[10px] text-muted-foreground/60 font-normal">
                     (soon)
                   </span>
@@ -370,7 +370,7 @@ export function SettingsForm() {
                 disabled
               >
                 <span className="flex items-center gap-1.5">
-                  Notifications
+                Notifications
                   <span className="text-[10px] text-muted-foreground/60 font-normal">
                     (soon)
                   </span>
