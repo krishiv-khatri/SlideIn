@@ -352,7 +352,7 @@ async function extractContactName($: cheerio.CheerioAPI, cleanedContent: string,
   }
 
   // 5. Look for any "Contact" sections
-  const contactSection = $('*:contains("Contact")').filter(function(this: cheerio.Element) {
+  const contactSection = $('*:contains("Contact")').filter(function(this: any) {
     return $(this).text().trim() === 'Contact' || 
            $(this).text().trim() === 'Contact Us' || 
            $(this).text().trim() === 'Contact Information';
@@ -597,7 +597,7 @@ function extractRelevantContent($: cheerio.CheerioAPI): string {
   return content.join('\n\n');
 }
 
-function shouldIgnoreElement($: cheerio.CheerioAPI, element: cheerio.Element): boolean {
+function shouldIgnoreElement($: cheerio.CheerioAPI, element: any): boolean {
   const classes = $(element).attr('class') || '';
   const id = $(element).attr('id') || '';
   
