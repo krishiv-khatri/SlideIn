@@ -9,6 +9,11 @@ import {
   Variants
 } from "framer-motion"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Check, Star, ArrowRight, Mail, Zap, Shield, Users, TrendingUp, MessageSquare, Target, Award, Globe } from "lucide-react"
 
 // Animation variants
 const fadeIn = {
@@ -30,6 +35,26 @@ const itemFade = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
 }
+
+
+
+// University logos ordered for maximum exposure and color contrast
+const universityLogos = [
+  { name: "Stanford", src: "/university-logos/Stanford_logo.png" }, // Red - high prestige, great exposure
+  { name: "NYU", src: "/university-logos/NYU_logo.png" }, // Purple - contrasts with red
+  { name: "UC Berkeley", src: "/university-logos/Berkeley_logo.png" }, // Blue/Gold - top tier
+  { name: "Texas", src: "/university-logos/Texas_logo.png" }, // Orange - contrasts with blue
+  { name: "UCLA", src: "/university-logos/UCLA__logo.png" }, // Blue/Gold - high prestige
+  { name: "UMich", src: "/university-logos/UMich_logo.png" }, // Blue/Yellow - contrasts well
+  { name: "Georgia Tech", src: "/university-logos/Georgia_Tech_logo.png" }, // Gold/Navy - good contrast
+  { name: "OSU", src: "/university-logos/OSU_logo.png" }, // Red/Gray - contrasts with gold
+  { name: "Boston University", src: "/university-logos/Boston_logo.png" }, // Red/White - good visibility
+  { name: "UCSD", src: "/university-logos/UCSD_logo.png" }, // Blue/Gold - contrasts with red
+  { name: "UIUC", src: "/university-logos/UIUC_logo.png" }, // Orange/Blue - good contrast
+  { name: "Purdue", src: "/university-logos/Purdue_logo.png" }, // Gold/Black - contrasts well
+  { name: "Rutgers", src: "/university-logos/Rutgers_logo.png" }, // Red/Black - good contrast
+  { name: "HKU", src: "/university-logos/HKU_logo.png" }, // Green/Gold - unique color ending
+];
 
 export function LandingPageClient({ satoshiClassName }: { satoshiClassName: string }) {
   const isMobile = useIsMobile();
@@ -98,13 +123,30 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
             transition={{ delay: 0.4, duration: 0.8 }}
           >
             <h1 className={`text-5xl md:text-6xl font-extrabold text-gray-900 mb-6 md:mb-8 tracking-tight ${satoshiClassName}`}>
-              Your AI Email Assistant
+              Your AI Cold Outreach Assistant
             </h1>
-            <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto px-1">
-              Write better personalized emails, track responses, and never miss a follow-up.
-              Perfect for students and professionals seeking to build meaningful connections.
+            <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 max-w-3xl mx-auto px-1">
+              Get faster responses with automated, personalized cold outreach. Perfect for sales, networking, business development, freelancing, and building meaningful professional connections.
             </p>
           </motion.div>
+
+          {/* Trust Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-8"
+          >
+            <div className="flex items-center">
+              <span className="text-pink-500 font-semibold">1,000+</span>
+              <span className="ml-1">professionals trust SlideIn</span>
+            </div>
+            <div className="flex items-center ml-4">
+              <span className="text-green-500">⭐⭐⭐⭐⭐</span>
+              <span className="ml-1 text-gray-500">(4.9/5)</span>
+            </div>
+          </motion.div>
+
           <motion.div 
             className="flex flex-col md:flex-row justify-center md:gap-4 space-y-4 md:space-y-0 px-4"
             initial={{ opacity: 0, y: 20 }}
@@ -120,7 +162,7 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
                 href="/sign-up"
                 className="bg-pink-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-pink-600 transition-colors block text-center w-full md:w-auto"
               >
-                Get Started
+                Try It Free
               </Link>
             </motion.div>
             <motion.div 
@@ -139,56 +181,211 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
         </div>
       </motion.div>
 
+              {/* Trusted by Universities */}
+        <motion.section 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={fadeIn}
+          className="py-16 md:py-20 bg-gradient-to-b from-gray-50/50 to-white"
+        >
+          <div className="container mx-auto px-4">
+            <h2 className={`${satoshiClassName} text-lg md:text-xl font-medium text-center text-gray-600 mb-16`}>
+              Trusted by students and professionals at
+            </h2>
+            
+            <div 
+              className="relative overflow-hidden select-none cursor-grab active:cursor-grabbing"
+              style={{ height: '240px', paddingTop: '30px', paddingBottom: '30px' }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const container = e.currentTarget.querySelector('.carousel-track') as HTMLElement;
+                if (!container) return;
+                
+                const startX = e.pageX;
+                let isDragging = false;
+                
+                // Get current transform value
+                const computedStyle = window.getComputedStyle(container);
+                const matrix = computedStyle.transform;
+                let currentTranslate = 0;
+                
+                if (matrix !== 'none') {
+                  const matrixValues = matrix.split('(')[1].split(')')[0].split(',');
+                  currentTranslate = parseFloat(matrixValues[4]) || 0;
+                }
+                
+                // Pause animation
+                container.style.animationPlayState = 'paused';
+                
+                const handleMouseMove = (moveEvent: MouseEvent) => {
+                  moveEvent.preventDefault();
+                  isDragging = true;
+                  const x = moveEvent.pageX - startX;
+                  const newTranslate = currentTranslate + x;
+                  container.style.transform = `translateX(${newTranslate}px)`;
+                };
+                
+                const handleMouseUp = () => {
+                  if (!isDragging) {
+                    // Resume animation immediately if no dragging occurred
+                    container.style.animationPlayState = 'running';
+                  } else {
+                    // Resume animation after a short delay
+                    setTimeout(() => {
+                      container.style.animationPlayState = 'running';
+                    }, 1000);
+                  }
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+              onDragStart={(e) => e.preventDefault()}
+            >
+              <div 
+                className="flex animate-scroll-faster hover:animation-play-state-paused carousel-track"
+                style={{ 
+                  width: `${universityLogos.length * (180 + 8) * 2}px`,
+                  willChange: 'transform'
+                }}
+              >
+                {/* First set of logos */}
+                {universityLogos.map((logo, index) => (
+                  <motion.div
+                    key={`first-${index}`}
+                    className="flex-shrink-0 flex items-center justify-center"
+                    style={{ 
+                      width: '180px', 
+                      height: '100px',
+                      marginRight: index === universityLogos.length - 1 ? '0px' : '8px'
+                    }}
+                    whileHover={{ 
+                      scale: 1.1,
+                      y: -8,
+                      transition: { 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 20 
+                      }
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Image
+                      src={logo.src}
+                      alt={`${logo.name} logo`}
+                      width={180}
+                      height={100}
+                      className="w-full h-full object-contain select-none"
+                      style={{ filter: 'none', userSelect: 'none' }}
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                    />
+                  </motion.div>
+                ))}
+                
+                {/* Duplicate set for seamless loop */}
+                {universityLogos.map((logo, index) => (
+                  <motion.div
+                    key={`second-${index}`}
+                    className="flex-shrink-0 flex items-center justify-center"
+                    style={{ 
+                      width: '180px', 
+                      height: '100px',
+                      marginLeft: index === 0 ? '8px' : '0px',
+                      marginRight: index === universityLogos.length - 1 ? '0px' : '8px'
+                    }}
+                    whileHover={{ 
+                      scale: 1.1,
+                      y: -8,
+                      transition: { 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 20 
+                      }
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Image
+                      src={logo.src}
+                      alt={`${logo.name} logo`}
+                      width={180}
+                      height={100}
+                      className="w-full h-full object-contain select-none"
+                      style={{ filter: 'none', userSelect: 'none' }}
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
       {/* Features Section */}
       <motion.div 
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={staggerContainer}
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20"
       >
+        <div className="text-center mb-12">
+          <h2 className={`${satoshiClassName} text-3xl md:text-4xl font-bold text-gray-900 mb-4`}>
+            Everything you need for successful outreach
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Whether you're in sales, freelancing, or building your network, SlideIn provides the tools you need to get responses.
+          </p>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <motion.div 
             variants={itemFade}
-            className="bg-white p-6 md:p-8 rounded-xl shadow-sm"
+            className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100"
             whileHover={{ y: isMobile ? -2 : -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <div className="text-3xl mb-4">📈</div>
-            <h3 className={`${satoshiClassName} text-xl font-bold mb-2 md:mb-3`}>Instant Insights</h3>
-            <p className="text-gray-600 mb-2 font-medium">Know who opens your emails — and when.</p>
+            <h3 className={`${satoshiClassName} text-xl font-bold mb-2 md:mb-3`}>Real-Time Tracking</h3>
+            <p className="text-gray-600 mb-2 font-medium">Know exactly when prospects engage.</p>
             <p className="text-gray-500 text-sm md:text-base">
-              Get real-time feedback on opens and replies so you know what's working and when to follow up.
+              Get instant notifications on email opens and replies. Never wonder if your message was seen again.
             </p>
           </motion.div>
           <motion.div 
             variants={itemFade}
-            className="bg-white p-6 md:p-8 rounded-xl shadow-sm"
+            className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100"
             whileHover={{ y: isMobile ? -2 : -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <div className="text-3xl mb-4">🤖</div>
-            <h3 className={`${satoshiClassName} text-xl font-bold mb-2 md:mb-3`}>Smart Drafts</h3>
-            <p className="text-gray-600 mb-2 font-medium">Never start from scratch again.</p>
+            <h3 className={`${satoshiClassName} text-xl font-bold mb-2 md:mb-3`}>AI-Powered Personalization</h3>
+            <p className="text-gray-600 mb-2 font-medium">Write compelling emails in seconds.</p>
             <p className="text-gray-500 text-sm md:text-base">
-              SlideIn suggests tailored cold email drafts based on who you're reaching out to and why — so you sound confident and clear.
+              Our AI analyzes your prospect and suggests personalized messages that get responses, not spam folders.
             </p>
           </motion.div>
           <motion.div 
             variants={itemFade}
-            className="bg-white p-6 md:p-8 rounded-xl shadow-sm"
+            className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100"
             whileHover={{ y: isMobile ? -2 : -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <div className="text-3xl mb-4">🔁</div>
-            <h3 className={`${satoshiClassName} text-xl font-bold mb-2 md:mb-3`}>Auto Follow-Ups</h3>
-            <p className="text-gray-600 mb-2 font-medium">Don't let great opportunities slip.</p>
+            <h3 className={`${satoshiClassName} text-xl font-bold mb-2 md:mb-3`}>Smart Follow-Ups</h3>
+            <p className="text-gray-600 mb-2 font-medium">Never let opportunities slip away.</p>
             <p className="text-gray-500 text-sm md:text-base">
-              Set it once and SlideIn sends polite follow-ups for you, so you stay top of inbox without being annoying.
+              Automated, perfectly timed follow-ups that feel personal. Stay top-of-mind without being pushy.
             </p>
           </motion.div>
         </div>
       </motion.div>
+
+
 
       {/* How It Works Section */}
       <motion.div 
@@ -196,7 +393,7 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={fadeIn}
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 bg-white"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 bg-gray-50"
       >
         <h2 className={`${satoshiClassName} text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12`}>How It Works</h2>
         <motion.div 
@@ -207,10 +404,10 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
           className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
         >
           {[
-            { number: 1, title: "Connect", description: "Link your Gmail in seconds" },
-            { number: 2, title: "Write", description: "Get AI-powered suggestions" },
-            { number: 3, title: "Send", description: "Schedule follow-ups easily" },
-            { number: 4, title: "Track", description: "See who's interested" },
+            { number: 1, title: "Connect", description: "Link your email in seconds" },
+            { number: 2, title: "Personalize", description: "AI crafts your message" },
+            { number: 3, title: "Send & Track", description: "Monitor engagement live" },
+            { number: 4, title: "Follow Up", description: "Automated smart sequences" },
           ].map((step, index) => (
             <motion.div 
               key={index}
@@ -219,9 +416,149 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
               whileHover={{ scale: isMobile ? 1.02 : 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <div className="text-pink-500 text-xl md:text-2xl mb-3 md:mb-4">{step.number}</div>
+              <div className="w-12 h-12 bg-pink-500 text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto mb-3 md:mb-4">
+                {step.number}
+              </div>
               <h3 className="font-semibold mb-1 md:mb-2 text-sm md:text-base">{step.title}</h3>
               <p className="text-gray-600 text-xs md:text-sm">{step.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.div>
+
+      {/* Stats Section */}
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={fadeIn}
+        className="py-16 md:py-20 bg-white"
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className={`${satoshiClassName} text-3xl md:text-4xl font-bold text-gray-900 mb-4`}>
+              Proven Results
+            </h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Join thousands of professionals who've transformed their outreach with SlideIn
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto">
+            <motion.div 
+              variants={staggerContainer}
+              className="flex flex-wrap justify-center items-center gap-8 md:gap-12"
+            >
+              <motion.div 
+                variants={itemFade} 
+                className="flex flex-col items-center p-6 bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl min-w-[180px]"
+                whileHover={{ scale: 1.05, y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="text-4xl md:text-5xl font-bold text-pink-500 mb-2">1,000+</div>
+                <div className="text-gray-700 font-medium text-center">Active Users</div>
+                <div className="text-gray-500 text-sm mt-1">Growing daily</div>
+              </motion.div>
+
+              <motion.div 
+                variants={itemFade} 
+                className="flex flex-col items-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl min-w-[180px]"
+                whileHover={{ scale: 1.05, y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="text-4xl md:text-5xl font-bold text-green-500 mb-2">40%</div>
+                <div className="text-gray-700 font-medium text-center">Higher Response Rate</div>
+                <div className="text-gray-500 text-sm mt-1">vs. traditional methods</div>
+              </motion.div>
+
+              <motion.div 
+                variants={itemFade} 
+                className="flex flex-col items-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl min-w-[180px]"
+                whileHover={{ scale: 1.05, y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="text-4xl md:text-5xl font-bold text-blue-500 mb-2">50K+</div>
+                <div className="text-gray-700 font-medium text-center">Emails Sent</div>
+                <div className="text-gray-500 text-sm mt-1">This month</div>
+              </motion.div>
+
+              <motion.div 
+                variants={itemFade} 
+                className="flex flex-col items-center p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl min-w-[180px]"
+                whileHover={{ scale: 1.05, y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="text-4xl md:text-5xl font-bold text-yellow-500 mb-2">4.9/5</div>
+                <div className="text-gray-700 font-medium text-center">User Rating</div>
+                <div className="text-gray-500 text-sm mt-1">⭐⭐⭐⭐⭐</div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Use Cases Section */}
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={fadeIn}
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20"
+      >
+        <div className="text-center mb-12">
+          <h2 className={`${satoshiClassName} text-3xl md:text-4xl font-bold text-gray-900 mb-4`}>
+            Perfect for every professional
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Whether you're growing your business, finding opportunities, or building relationships, SlideIn adapts to your needs.
+          </p>
+        </div>
+        
+        <motion.div 
+          variants={staggerContainer}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {[
+            {
+              icon: "💼",
+              title: "Sales Professionals",
+              description: "Close more deals with personalized prospecting and smart follow-ups that convert."
+            },
+            {
+              icon: "🎯",
+              title: "Business Development",
+              description: "Build strategic partnerships and expand your network with targeted outreach."
+            },
+            {
+              icon: "🚀",
+              title: "Freelancers & Consultants",
+              description: "Land more clients by standing out in crowded inboxes with personalized proposals."
+            },
+            {
+              icon: "🎓",
+              title: "Career Advancement",
+              description: "Connect with mentors, recruiters, and industry leaders to accelerate your career."
+            },
+            {
+              icon: "🤝",
+              title: "Networking",
+              description: "Build meaningful professional relationships with authentic, personalized outreach."
+            },
+            {
+              icon: "📈",
+              title: "Entrepreneurs",
+              description: "Raise funding, find partners, and grow your business through strategic connections."
+            }
+          ].map((useCase, index) => (
+            <motion.div
+              key={index}
+              variants={itemFade}
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+              whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+            >
+              <div className="text-2xl mb-4">{useCase.icon}</div>
+              <h3 className="font-semibold text-lg mb-2">{useCase.title}</h3>
+              <p className="text-gray-600 text-sm">{useCase.description}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -231,8 +568,8 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 bg-white border-t border-gray-100">
         <div className="max-w-4xl mx-auto">
           <p className="text-center text-gray-600 text-xs md:text-sm">
-            SlideIn is designed for personal, one-to-one communication — helping students and professionals connect with mentors, 
-            recruiters, and hiring managers. <span className="opacity-75">Not intended for bulk email or marketing outreach.</span>
+            SlideIn is designed for personal, one-to-one professional communication — helping you build authentic relationships through thoughtful outreach. 
+            <span className="opacity-75"> Not intended for bulk email or marketing campaigns.</span>
           </p>
         </div>
       </div>
@@ -246,15 +583,15 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
         className="container mx-auto px-6 sm:px-8 lg:px-8 py-16 md:py-20"
       >
         <motion.div 
-          className="bg-pink-500 rounded-2xl p-8 md:p-12 text-center"
+          className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl p-8 md:p-12 text-center"
           whileHover={{ scale: isMobile ? 1.005 : 1.01 }}
           transition={{ type: "spring", stiffness: 200 }}
         >
           <h2 className={`${satoshiClassName} text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6`}>
-            Ready to Connect with Mentors and Recruiters?
+            Ready to Transform Your Outreach?
           </h2>
           <p className="text-white/90 mb-8 md:mb-10 max-w-2xl mx-auto text-sm md:text-base">
-            Join students and professionals who are building meaningful relationships with personalized outreach using SlideIn.
+            Join 1,000+ professionals who've increased their response rates by 40% with personalized, intelligent cold outreach.
           </p>
           <motion.div 
             whileHover={{ scale: isMobile ? 1.02 : 1.05 }} 
@@ -265,7 +602,7 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
               href="/sign-up"
               className="bg-white text-pink-500 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-block w-full md:w-auto"
             >
-              Try It Free
+              Try t Free
             </Link>
           </motion.div>
         </motion.div>
@@ -303,8 +640,8 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
                 />
               </Link>
               <p className="text-gray-500 text-xs md:text-sm">
-                Write better cold emails, track responses, and never miss a follow-up.
-                Connect with more people, without the busywork.
+                Transform your cold outreach with AI-powered personalization and smart tracking.
+                Connect with more people, build better relationships.
               </p>
             </motion.div>
 
