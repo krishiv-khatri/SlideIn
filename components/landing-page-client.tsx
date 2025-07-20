@@ -709,6 +709,15 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
                     khatrikrishiv@gmail.com
                   </motion.a>
                 </li>
+                <li>
+                  <motion.a 
+                    whileHover={{ x: 2 }}
+                    href="mailto:aditya.jain2702@gmail.com" 
+                    className="text-gray-500 hover:text-pink-500 text-xs md:text-sm"
+                  >
+                    aditya.jain2702@gmail.com
+                  </motion.a>
+                </li>
               </ul>
             </motion.div>
           </motion.div>
