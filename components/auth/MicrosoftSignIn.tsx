@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
@@ -8,11 +9,16 @@ import { Loader2 } from 'lucide-react';
 
 export function MicrosoftSignIn() {
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams()
   const supabase = createClient();
 
   const handleMicrosoftSignIn = async () => {
     try {
       setIsLoading(true);
+      
+      // Get the redirect destination if any
+      const redirectedFrom = searchParams.get('redirectedFrom')
+      const state = redirectedFrom ? JSON.stringify({ redirectedFrom }) : undefined
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
@@ -26,6 +32,9 @@ export function MicrosoftSignIn() {
             'https://graph.microsoft.com/Mail.ReadWrite'
           ].join(' '),
           redirectTo: `${window.location.origin}/api/microsoft-auth/callback`,
+          queryParams: {
+            ...(state && { state })
+          }
         },
       });
 

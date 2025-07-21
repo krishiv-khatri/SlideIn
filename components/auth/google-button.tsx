@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FcGoogle } from "react-icons/fc"
 import { Loader2 } from 'lucide-react'
@@ -8,11 +9,16 @@ import { createClient } from '@/utils/supabase/client'
 
 export function GoogleButton() {
   const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams()
   
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true)
       const supabase = createClient()
+      
+      // Get the redirect destination if any
+      const redirectedFrom = searchParams.get('redirectedFrom')
+      const state = redirectedFrom ? JSON.stringify({ redirectedFrom }) : undefined
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -21,6 +27,7 @@ export function GoogleButton() {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
+            ...(state && { state })
           }
         }
       })

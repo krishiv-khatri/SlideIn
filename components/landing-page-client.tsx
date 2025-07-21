@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { TypingAnimation } from "@/components/typing-animation"
 import { 
   motion, 
@@ -13,7 +14,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, Star, ArrowRight, Mail, Zap, Shield, Users, TrendingUp, MessageSquare, Target, Award, Globe } from "lucide-react"
+import { Check, Star, ArrowRight, Mail, Zap, Shield, Users, TrendingUp, MessageSquare, Target, Award, Globe, Loader2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 // Animation variants
 const fadeIn = {
@@ -59,6 +61,41 @@ const universityLogos = [
 
 export function LandingPageClient({ satoshiClassName }: { satoshiClassName: string }) {
   const isMobile = useIsMobile();
+  const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const supabase = createClient();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          // User is already logged in, redirect to app
+          router.replace('/email-generator')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error)
+      } finally {
+        setIsCheckingAuth(false)
+      }
+    }
+    
+    checkAuth()
+  }, [router, supabase])
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">

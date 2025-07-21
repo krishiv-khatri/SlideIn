@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Loader2 } from 'lucide-react'
@@ -26,8 +26,41 @@ export function SignUpForm() {
   const [success, setSuccess] = useState<string | null>(null)
   const [privacyConsent, setPrivacyConsent] = useState(false)
   const [properUseConsent, setProperUseConsent] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          // User is already logged in, redirect to app
+          router.replace('/email-generator')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error)
+      } finally {
+        setIsCheckingAuth(false)
+      }
+    }
+    
+    checkAuth()
+  }, [router, supabase])
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <Card className="mx-auto max-w-sm">
+        <CardContent className="flex items-center justify-center p-6">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">Checking authentication...</span>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

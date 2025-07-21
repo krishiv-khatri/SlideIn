@@ -19,9 +19,30 @@ export function SignInForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          // User is already logged in, redirect to app
+          router.replace('/email-generator')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error)
+      } finally {
+        setIsCheckingAuth(false)
+      }
+    }
+    
+    checkAuth()
+  }, [router, supabase])
 
   useEffect(() => {
     const error = searchParams.get('error')
@@ -29,6 +50,18 @@ export function SignInForm() {
       setError(decodeURIComponent(error))
     }
   }, [searchParams])
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <Card className="mx-auto max-w-sm">
+        <CardContent className="flex items-center justify-center p-6">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">Checking authentication...</span>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,8 +78,12 @@ export function SignInForm() {
         throw error
       }
 
+      // Check if there's a redirect destination from middleware
+      const redirectedFrom = searchParams.get('redirectedFrom')
+      const redirectTo = redirectedFrom && redirectedFrom !== '/' ? redirectedFrom : '/email-generator'
+      
       // Keep loading state true during redirect
-      router.push("/email-generator")
+      router.push(redirectTo)
       router.refresh()
       
       // Don't clear loading state - let the redirect complete
