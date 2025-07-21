@@ -42,6 +42,7 @@ const itemFade = {
 const universityLogos = [
   { name: "Stanford", src: "/university-logos/Stanford_logo.png" }, // Red - high prestige, great exposure
   { name: "NYU", src: "/university-logos/NYU_logo.png" }, // Purple - contrasts with red
+  { name: "Princeton", src: "/university-logos/Princeton_logo.png" },
   { name: "UC Berkeley", src: "/university-logos/Berkeley_logo.png" }, // Blue/Gold - top tier
   { name: "Texas", src: "/university-logos/Texas_logo.png" }, // Orange - contrasts with blue
   { name: "UCLA", src: "/university-logos/UCLA__logo.png" }, // Blue/Gold - high prestige
