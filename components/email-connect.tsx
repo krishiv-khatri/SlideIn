@@ -1,12 +1,60 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { GmailConnectButton } from './gmail-connect-button';
 import { Mail, AlertCircle } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { BsMicrosoft } from 'react-icons/bs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { createBrowserClient } from '@supabase/ssr';
+
+// Simple Outlook connect button component
+const OutlookConnectButton = forwardRef<HTMLButtonElement, { onSuccess?: () => void } & React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  ({ onSuccess, ...props }, ref) => {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const handleOutlookConnect = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: {
+          scopes: [
+            'email',
+            'profile',
+            'offline_access',
+            'https://graph.microsoft.com/User.Read',
+            'https://graph.microsoft.com/Mail.Send',
+            'https://graph.microsoft.com/Mail.ReadWrite'
+          ].join(' '),
+          redirectTo: `${window.location.origin}/api/microsoft-auth/callback`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error connecting Outlook:', error);
+    }
+  };
+
+  return (
+    <button
+      {...props}
+      ref={ref}
+      onClick={handleOutlookConnect}
+      style={{ display: 'none' }}
+    />
+  );
+});
 
 interface EmailConnectProps {
   onSuccess?: () => void;
@@ -18,11 +66,22 @@ export function EmailConnect({ onSuccess, className = '' }: EmailConnectProps) {
   const [isGmailConnecting, setIsGmailConnecting] = useState(false);
   const gmailButtonRef = useRef<HTMLButtonElement>(null);
   
-  // Control Gmail button animation state
+  // State to track if Outlook is connecting
+  const [isOutlookConnecting, setIsOutlookConnecting] = useState(false);
+  const outlookButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Control button animation states
   const [isGmailHovered, setIsGmailHovered] = useState(false);
+  const [isOutlookHovered, setIsOutlookHovered] = useState(false);
 
-  // Handle successful Gmail connection
+  // Handle successful connections
   const handleGmailSuccess = () => {
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
+  const handleOutlookSuccess = () => {
     if (onSuccess) {
       onSuccess();
     }
@@ -34,6 +93,13 @@ export function EmailConnect({ onSuccess, className = '' }: EmailConnectProps) {
       setIsGmailConnecting(false);
     }
   }, [isGmailConnecting]);
+
+  useEffect(() => {
+    if (isOutlookConnecting && outlookButtonRef.current) {
+      outlookButtonRef.current.click();
+      setIsOutlookConnecting(false);
+    }
+  }, [isOutlookConnecting]);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -62,6 +128,11 @@ export function EmailConnect({ onSuccess, className = '' }: EmailConnectProps) {
   const googleIconVariants = {
     rest: { rotate: 0 },
     hover: { rotate: [0, -10, 10, -5, 5, 0], transition: { duration: 0.6 } }
+  };
+
+  const outlookIconVariants = {
+    rest: { rotate: 0 },
+    hover: { rotate: [0, 10, -10, 5, -5, 0], transition: { duration: 0.6 } }
   };
 
   return (
@@ -136,41 +207,50 @@ export function EmailConnect({ onSuccess, className = '' }: EmailConnectProps) {
           </div>
         </motion.div>
         
-        {/* Outlook Option (Disabled) */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
+        {/* Outlook Connect Option */}
+        <motion.div 
+          className="relative"
+          variants={buttonVariants}
+          initial="rest"
+          whileHover="hover"
+          whileTap="pressed"
+          onHoverStart={() => setIsOutlookHovered(true)}
+          onHoverEnd={() => setIsOutlookHovered(false)}
+        >
+          <button
+            onClick={() => setIsOutlookConnecting(true)}
+            disabled={isOutlookConnecting}
+            className="w-full flex items-center justify-between p-4 rounded-lg border border-slate-200 bg-white transition-all-brand shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            <div className="flex items-center">
               <motion.div 
-                variants={buttonVariants}
-                initial="rest"
-                whileHover="hover"
-                whileTap="pressed"
-                className="relative"
+                className="flex-shrink-0 mr-3"
+                variants={outlookIconVariants}
+                animate={isOutlookHovered ? "hover" : "rest"}
               >
-                <div className="w-full flex items-center justify-between p-4 rounded-lg border border-slate-200 bg-white opacity-70 cursor-not-allowed">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 mr-3 text-blue-600">
-                      <BsMicrosoft className="w-8 h-8" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-slate-800">Outlook</h3>
-                      <p className="text-sm text-slate-500">Connect with Microsoft</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-slate-400" />
-                    <span className="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-md font-medium text-sm">
-                      Coming Soon
-                    </span>
-                  </div>
-                </div>
+                <BsMicrosoft className="w-8 h-8 text-blue-600" />
               </motion.div>
-            </TooltipTrigger>
-            <TooltipContent className="bg-slate-800 text-white border-none">
-              <p>Outlook integration coming soon!</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              <div className="text-left">
+                <h3 className="font-medium text-slate-800">Outlook</h3>
+                <p className="text-sm text-slate-500">Connect with Microsoft</p>
+              </div>
+            </div>
+            <motion.div 
+              variants={connectBtnVariants}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm shadow-sm"
+            >
+              Connect
+            </motion.div>
+          </button>
+          
+          {/* Hidden real button that gets triggered */}
+          <div className="hidden">
+            <OutlookConnectButton 
+              onSuccess={handleOutlookSuccess}
+              ref={outlookButtonRef}
+            />
+          </div>
+        </motion.div>
       </div>
 
       <motion.div 
@@ -180,7 +260,7 @@ export function EmailConnect({ onSuccess, className = '' }: EmailConnectProps) {
         transition={{ delay: 0.4, duration: 0.5 }}
       >
         <p className="text-xs text-slate-400">
-          By connecting, you agree to our <a href="#" className="text-pink-500 hover:underline">Terms</a> and <a href="#" className="text-pink-500 hover:underline">Privacy Policy</a>
+          By connecting, you agree to our <a href="/terms-of-service" className="text-pink-500 hover:underline">Terms</a> and <a href="/privacy-policy" className="text-pink-500 hover:underline">Privacy Policy</a>
         </p>
       </motion.div>
     </motion.div>

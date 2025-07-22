@@ -245,6 +245,10 @@ export function SignUpForm() {
                 />
                 <Label htmlFor="privacy" className="text-sm font-normal cursor-pointer">
                   I agree to the{" "}
+                  <Link href="/terms-of-service" className="text-pink-500 hover:text-pink-600 transition-colors font-medium">
+                    Terms of Service
+                  </Link>
+                  {" "}and{" "}
                   <Link href="/privacy-policy" className="text-pink-500 hover:text-pink-600 transition-colors font-medium">
                     Privacy Policy
                   </Link>

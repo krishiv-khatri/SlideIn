@@ -150,6 +150,10 @@ export default function ConsentPage() {
             />
             <Label htmlFor="privacy" className="text-sm font-normal leading-tight cursor-pointer">
               I agree to the{" "}
+              <a href="/terms-of-service" className="text-pink-500 hover:text-pink-600 transition-colors" target="_blank">
+                Terms of Service
+              </a>
+              {" "}and{" "}
               <a href="/privacy-policy" className="text-pink-500 hover:text-pink-600 transition-colors" target="_blank">
                 Privacy Policy
               </a>

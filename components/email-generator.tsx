@@ -494,17 +494,53 @@ export function EmailGenerator() {
       return;
     }
     
-    // Get Gmail tokens from Supabase storage
+    if (!selectedAccount) {
+      toast.error("Please select an email account to send from");
+      return;
+    }
+    
+    // Get the selected account details
+    const selectedAccountDetails = emailAccounts.find(acc => acc.id === selectedAccount);
+    if (!selectedAccountDetails) {
+      toast.error("Selected email account not found");
+      return;
+    }
+    
+    // Get tokens for the selected account from Supabase
     try {
-      const gmailTokens = await getGmailTokens();
-      if (!gmailTokens) {
-        toast.error("Please connect your Gmail account first. Click the 'Connect Gmail' button in the top right corner.");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        toast.error("Authentication error. Please sign in again.");
         return;
       }
       
-      // Get current user ID for tracking
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
+      // Get account tokens from database
+      const { data: accountData, error: accountError } = await supabase
+        .from('email_accounts')
+        .select('*')
+        .eq('id', selectedAccount)
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (accountError || !accountData) {
+        console.error('Error fetching account data:', accountError);
+        toast.error("Failed to get account credentials. Please try reconnecting your account.");
+        return;
+      }
+      
+      if (!accountData.access_token || !accountData.refresh_token) {
+        toast.error(`Please reconnect your ${selectedAccountDetails.provider} account`);
+        return;
+      }
+      
+      const accountTokens = {
+        access_token: accountData.access_token,
+        refresh_token: accountData.refresh_token,
+        expiry_date: accountData.expiry_date
+      };
+      
+      console.log(`Using ${selectedAccountDetails.provider} account:`, selectedAccountDetails.email);
+      const userId = session.user.id;
       console.log('Current user ID for tracking:', userId);
       
       setIsSending(true);
@@ -532,7 +568,11 @@ export function EmailGenerator() {
           to: recipientEmail,
           subject,
           html: finalEmailBody,
-          gmailTokens,
+          provider: selectedAccountDetails.provider,
+          ...(selectedAccountDetails.provider === 'gmail' 
+            ? { gmailTokens: accountTokens } 
+            : { outlookTokens: accountTokens }
+          ),
           trackingEnabled,
           userId,
           attachments
@@ -554,7 +594,21 @@ export function EmailGenerator() {
         if (!response.ok) {
           // Check if token was refreshed
           if (responseData.refreshedTokens) {
-            await updateGmailTokens(responseData.refreshedTokens);
+            // Update the account tokens in the database
+            const { error: updateError } = await supabase
+              .from('email_accounts')
+              .update({
+                access_token: responseData.refreshedTokens.access_token,
+                refresh_token: responseData.refreshedTokens.refresh_token,
+                expiry_date: responseData.refreshedTokens.expiry_date,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', selectedAccount);
+            
+            if (updateError) {
+              console.error('Error updating refreshed tokens:', updateError);
+            }
+            
             toast.error('Token refreshed. Please try sending again.');
             setSendStatus('error');
             return;
@@ -604,15 +658,13 @@ export function EmailGenerator() {
     } catch (error) {
       console.error('Error getting Gmail tokens:', error);
       
-      // Handle the specific reconnection error
-      if (error instanceof Error && error.message.includes('Gmail reconnection required')) {
-        toast.error("Your Gmail connection needs to be refreshed. Please reconnect your Gmail account.");
-        // Use the new helper function instead of just handleGmailConnect
-        reconnectGmailAccount();
+      // Handle connection errors
+      if (error instanceof Error && error.message.includes('reconnection required')) {
+        toast.error(`Your ${selectedAccountDetails?.provider || 'email'} connection needs to be refreshed. Please reconnect your account.`);
         return;
       }
       
-      toast.error("Failed to access your Gmail account. Please try reconnecting.");
+      toast.error("Failed to access your email account. Please try reconnecting.");
     }
   }
 

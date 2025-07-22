@@ -715,9 +715,9 @@ export function LandingPageClient({ satoshiClassName }: { satoshiClassName: stri
                   </Link>
                 </li>
                 <li>
-                  <span className="text-gray-400 text-xs md:text-sm cursor-not-allowed">
+                  <Link href="/terms-of-service" className="text-gray-500 hover:text-pink-500 text-xs md:text-sm">
                     Terms of Service
-                  </span>
+                  </Link>
                 </li>
               </ul>
             </motion.div>
