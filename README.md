@@ -8,6 +8,7 @@ A modern email generator and sender application built with Next.js, powered by G
 - **Gmail Integration**: Send emails directly from your Gmail account
 - **Email Tracking**: Track email opens and engagement
 - **File Attachments**: Support for uploading and sending file attachments
+- **Resume Integration**: Upload your resume to personalize email content
 - **Multiple Account Support**: Connect and manage multiple Gmail accounts
 - **Responsive Design**: Works on desktop and mobile devices
 
@@ -40,6 +41,34 @@ The attachment feature uses:
 - Base64 encoding for file data transmission
 - Proper MIME type detection for different file formats
 - Frontend file validation and size checking
+
+## Resume Integration
+
+SlideIn now supports uploading your resume to make email outreach more personalized and effective.
+
+### How It Works
+1. Upload your resume in the Settings → Resume tab
+2. The system extracts text content from your resume
+3. When generating emails, your background and qualifications are automatically considered
+4. AI uses this context to create more compelling, relevant outreach
+
+### Supported Resume Formats
+- **PDF**: Portable Document Format files
+- **Word Documents**: .doc and .docx files
+- **Text Files**: Plain text .txt files
+- **File Size Limit**: Maximum 10MB per resume
+
+### Privacy & Security
+- Resume content is stored securely in your private account
+- Text extraction happens server-side for security
+- Your resume data is never shared with third parties
+- You can view, replace, or delete your resume anytime
+
+### Usage Tips
+- Keep your resume updated for best results
+- Include relevant keywords for your target industry
+- The AI will automatically match your experience to outreach context
+- Resume content helps tailor tone and messaging appropriately
 
 ## Getting Started
 

@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createBrowserClient } from "@supabase/ssr"
 import { toast } from "sonner"
-import { Loader2, Mail } from "lucide-react"
+import { Loader2, Mail, Upload, FileText, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { showToast } from "@/components/ui/toast-config"
@@ -37,12 +37,24 @@ interface StoredGmailAccount {
   displayName?: string
 }
 
+interface UserResume {
+  id: string
+  file_name: string
+  file_size: number
+  mime_type: string
+  created_at: string
+  updated_at: string
+}
+
 export function SettingsForm() {
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isConnecting, setIsConnecting] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userResume, setUserResume] = useState<UserResume | null>(null)
+  const [isUploadingResume, setIsUploadingResume] = useState(false)
+  const [isDeletingResume, setIsDeletingResume] = useState(false)
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -140,6 +152,9 @@ export function SettingsForm() {
       }));
       console.log('Formatted accounts for display:', formattedAccounts);
       setEmailAccounts(formattedAccounts);
+      
+      // Also load user resume
+      await loadUserResume(userId);
     } catch (error) {
       console.error('Error loading email accounts:', error instanceof Error ? error.message : 'Unknown error');
       showToast.error({ 
@@ -149,6 +164,124 @@ export function SettingsForm() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadUserResume = async (userId: string) => {
+    try {
+      const response = await fetch('/api/resume');
+      if (response.ok) {
+        const data = await response.json();
+        setUserResume(data.resume);
+      } else {
+        console.error('Failed to load resume');
+      }
+    } catch (error) {
+      console.error('Error loading resume:', error);
+    }
+  };
+
+  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      showToast.error({ 
+        message: 'Invalid file type', 
+        description: 'Please upload a PDF, Word document, or text file.' 
+      });
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showToast.error({ 
+        message: 'File too large', 
+        description: 'Maximum file size is 10MB.' 
+      });
+      return;
+    }
+
+    setIsUploadingResume(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/resume/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserResume({
+          id: data.resume.id,
+          file_name: data.resume.fileName,
+          file_size: data.resume.fileSize,
+          mime_type: data.resume.mimeType,
+          created_at: data.resume.uploadedAt,
+          updated_at: data.resume.uploadedAt,
+        });
+        showToast.success({ message: 'Resume uploaded successfully!' });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload resume');
+      }
+    } catch (error) {
+      console.error('Resume upload error:', error);
+      showToast.error({ 
+        message: 'Failed to upload resume', 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    } finally {
+      setIsUploadingResume(false);
+      // Clear the input
+      event.target.value = '';
+    }
+  };
+
+  const handleResumeDelete = async () => {
+    if (!userResume) return;
+
+    setIsDeletingResume(true);
+    
+    try {
+      const response = await fetch('/api/resume', {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setUserResume(null);
+        showToast.success({ message: 'Resume deleted successfully!' });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete resume');
+      }
+    } catch (error) {
+      console.error('Resume deletion error:', error);
+      showToast.error({ 
+        message: 'Failed to delete resume', 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    } finally {
+      setIsDeletingResume(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleConnectGmail = async () => {
@@ -348,9 +481,12 @@ export function SettingsForm() {
       <Tabs defaultValue="account" className="w-full h-full">
         <div className="sticky top-0 z-10 pt-4 pb-3 backdrop-blur-sm bg-background/95 border-b">
           <div className="flex justify-center">
-            <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto rounded-xl p-1 gap-1 bg-muted/30">
+            <TabsList className="grid grid-cols-4 w-full max-w-lg mx-auto rounded-xl p-1 gap-1 bg-muted/30">
               <TabsTrigger value="account" className="rounded-lg py-2.5 text-sm font-medium">
                 Email Accounts
+              </TabsTrigger>
+              <TabsTrigger value="resume" className="rounded-lg py-2.5 text-sm font-medium">
+                Resume
               </TabsTrigger>
               <TabsTrigger 
                 value="preferences" 
@@ -576,6 +712,122 @@ export function SettingsForm() {
                     </svg>
                     Connect Outlook
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="resume" className="w-full h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="w-full max-w-3xl mx-auto px-4 py-6">
+            <Card className="shadow-sm overflow-hidden border rounded-xl w-full">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-white pb-6 border-b">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Resume</CardTitle>
+                    <CardDescription>Upload your resume to personalize email generation</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5 pt-6">
+                {userResume ? (
+                  // Show uploaded resume
+                  <div className="rounded-lg border p-4 transition-all hover:bg-slate-50">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <FileText className="h-4 w-4 text-blue-500" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{userResume.file_name}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {formatFileSize(userResume.file_size)} • Uploaded {new Date(userResume.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => document.getElementById('resume-upload')?.click()}
+                          disabled={isUploadingResume}
+                        >
+                          {isUploadingResume ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            'Replace'
+                          )}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-destructive"
+                          onClick={handleResumeDelete}
+                          disabled={isDeletingResume}
+                        >
+                          {isDeletingResume ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            'Delete'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Show upload area
+                  <div className="text-center py-8">
+                    <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
+                      <Upload className="h-12 w-12" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload your resume</h3>
+                    <p className="text-gray-500 mb-6">
+                      Your resume will be used to personalize email content and make your outreach more effective.
+                    </p>
+                    <Button
+                      onClick={() => document.getElementById('resume-upload')?.click()}
+                      disabled={isUploadingResume}
+                      className="mb-4"
+                    >
+                      {isUploadingResume ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Choose Resume File
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-400">
+                      Supports PDF, Word documents, and text files (max 10MB)
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  id="resume-upload"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleResumeUpload}
+                  className="hidden"
+                />
+
+                {/* Information about how resume is used */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-900 mb-2">How your resume is used:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Extracts your experience, skills, and background</li>
+                    <li>• Personalizes email content based on your qualifications</li>
+                    <li>• Helps tailor outreach to match your expertise</li>
+                    <li>• Your data is securely stored and never shared</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

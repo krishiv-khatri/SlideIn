@@ -850,6 +850,58 @@ export async function POST(request: Request) {
       : urlContent;
 
     console.log('Generating email with Gemini...');
+
+    // Fetch user's resume context if available
+    let resumeContext = '';
+    try {
+      const cookieStore = await import('next/headers').then(m => m.cookies());
+      const resolvedCookies = await cookieStore;
+      
+      const resumeSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return resolvedCookies.get(name)?.value;
+            },
+            set(name: string, value: string, options: any) {
+              try {
+                resolvedCookies.set(name, value, options);
+              } catch {
+                // The set method will throw in middleware or when cookies are static
+              }
+            },
+            remove(name: string, options: any) {
+              try {
+                resolvedCookies.set(name, '', { ...options, maxAge: 0 });
+              } catch {
+                // The delete method will throw in middleware or when cookies are static
+              }
+            },
+          },
+        }
+      );
+
+      const { data: { session } } = await resumeSupabase.auth.getSession();
+      
+      if (session?.user?.id) {
+        const { data: resume } = await resumeSupabase
+          .from('user_resumes')
+          .select('extracted_text')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (resume?.extracted_text) {
+          // Limit resume context to prevent prompt from being too long
+          resumeContext = resume.extracted_text.substring(0, 2000);
+          console.log('Found resume context for user, length:', resumeContext.length);
+        }
+      }
+    } catch (error) {
+      console.log('Could not fetch resume context:', error);
+      // Continue without resume context
+    }
     
     // Create a dynamic prompt based on the input parameters
     const warmthLevel = warmth || 50;
@@ -869,6 +921,7 @@ export async function POST(request: Request) {
       - Sender's Name: ${userName || 'Me'}
       - Context: ${detectUrlContext(url, truncatedContent)}
       ${recipientName ? `- Suggested Recipient: ${recipientName} (use as context, but address naturally)` : ''}
+      ${resumeContext ? `- Sender's Background/Resume: ${resumeContext}` : ''}
 
       Before writing:
       1. Deeply analyze the provided URL content preview.
@@ -882,6 +935,7 @@ export async function POST(request: Request) {
       - You must *mention exact and real* details that show clear research.
       - The email must *feel naturally written by a human* and be short and concise, not like a template.
       - Match the requested tone ("${tone}") with the warmth level (${warmthLevel}/100).
+      ${resumeContext ? '- When relevant, subtly incorporate the sender\'s background, experience, or qualifications from their resume to make the outreach more compelling and relevant.' : ''}
       - WARMTH LEVEL GUIDANCE:
         * 1-25: Use very formal language, minimal personal touches, professional distance
         * 26-50: Professional with some warmth, appropriate personal elements
