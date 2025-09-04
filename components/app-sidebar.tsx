@@ -117,6 +117,11 @@ export function AppSidebar({
     ],
     navSecondary: [
       {
+        title: "Context",
+        url: "/context",
+        icon: Settings,
+      },
+      {
         title: "Settings",
         url: "/settings",
         icon: Settings,

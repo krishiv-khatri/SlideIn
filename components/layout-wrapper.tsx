@@ -5,6 +5,7 @@ import { useSidebar } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ReactNode } from "react"
 import { Menu } from "lucide-react"
+import OnboardingGate from "@/components/onboarding/onboarding-gate"
 
 // Inner component to access sidebar context
 function MainContentWithSidebar({ children }: { children: ReactNode }) {
@@ -30,7 +31,10 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       <div className="flex h-screen w-full overflow-hidden">
         <MobileSidebarButton />
         <AppSidebar />
-        <MainContentWithSidebar>{children}</MainContentWithSidebar>
+        <MainContentWithSidebar>
+          {children}
+          <OnboardingGate />
+        </MainContentWithSidebar>
       </div>
     </SidebarProvider>
   )
