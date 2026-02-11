@@ -36,8 +36,6 @@ So in practice it’s built for things like grad students emailing professors, j
 3. Run Supabase migrations so auth and tracking/email tables exist.
 4. Run the app: `npm run dev` (and optionally build with `npm run build`).
 
-The app was built with [v0.dev](https://v0.dev) and can be deployed to Vercel; the repo stays in sync with that workflow. The live project and deployment links are in the repo or project config.
-
 ## File attachments
 
 Attachments are supported in the composer and send flow: common document and image types, with a per-file and total size limit (e.g. 25MB). The send API builds a multipart MIME message with base64-encoded parts and correct MIME types. Frontend validation warns before send if files are too large or disallowed.
